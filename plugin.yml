@@ -1,0 +1,9 @@
+name: MapUpdater
+main: tk.projectcraftmc.updater.UpdaterMain
+author: Eelek
+version: 1.1
+description: Map updater for ProjectCraft Map
+
+commands:
+  genmap:
+    description: dev

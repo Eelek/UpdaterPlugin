@@ -1,0 +1,31 @@
+#Config file
+
+#URL's:
+#  - Api Url: The player data updater page
+#  - Image Api Url: Background map image updater page
+#  - Map Data Url: Page with block color list.
+api-url: http://example.com/
+image-api-url: http://example.com/
+map-data-url: http://example.com/
+
+#The time in seconds between map updates (Default is 24 hours)
+render-update-time: 86400
+
+#The time in seconds between memory clean updates. (Default is every hour).
+#  The plugin saves edited chunks in memory, and this can fill up memory.
+#  Cleaning the memory is essentially moving edited chunks to the chunkCache.json
+memory-clean-update-time: 3600
+
+#Number of seconds between each update.
+delay-time: 5
+
+#Enable logging.
+logging: false
+
+#Send chat messsages to server.
+send-chat: false
+
+#This value is for internal use. 
+#  --==  Do not touch these. ==--
+last-render-update: 0
+last-memory-clean: 0
