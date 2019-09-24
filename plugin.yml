@@ -3,6 +3,7 @@ main: tk.projectcraftmc.updater.UpdaterMain
 author: Eelek
 version: 1.1
 description: Map updater for ProjectCraft Map
+api-version: 1.13
 
 commands:
   genmap:

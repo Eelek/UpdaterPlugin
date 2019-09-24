@@ -7,13 +7,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import javax.net.ssl.HttpsURLConnection;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -62,7 +60,7 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 		lastData = "";
 
 		cancel = false;
-
+		
 		runnable = new Runnable() {
 			public void run() {
 				JSONObject data = new JSONObject();
@@ -146,15 +144,19 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 
 		conn.setRequestProperty("User-Agent", "Mozilla/5.0");
 
-		conn.setRequestProperty("Content-Type", "application/x-www-form-encoded; charset=utf-8");
+		conn.setDoOutput(true);
 
 		DataOutputStream out = new DataOutputStream(conn.getOutputStream());
 
-		out.write(data.getBytes(StandardCharsets.UTF_8));
+		out.writeBytes(data);
 
 		out.flush();
 
 		out.close();
+		
+		if(conn.getResponseCode() > 200) {
+			throw new ConnectException("Couldn't send data to the webserver. (" + conn.getResponseCode() + " " + conn.getResponseMessage() + ")");
+		}
 
 		conn.disconnect();
 	}
@@ -174,15 +176,18 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 
 		BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 
-		while ((input = String.valueOf(input) + in.readLine()) != null)
-			;
+		StringBuffer response = new StringBuffer();
+		
+		while((input = in.readLine()) != null) {
+			response.append(input);
+		}
 
 		in.close();
 
-		return input;
+		return response.toString();
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR)
+	@EventHandler
 	public void onJoin(PlayerJoinEvent e) {
 		JSONObject player = new JSONObject();
 		player.put("username", e.getPlayer().getPlayerListName());
@@ -196,7 +201,7 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR)
+	@EventHandler
 	public void onLeave(PlayerQuitEvent e) {
 		JSONObject player = new JSONObject();
 		player.put("username", e.getPlayer().getPlayerListName());
@@ -208,7 +213,7 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 		}
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR)
+	@EventHandler
 	public void onChat(AsyncPlayerChatEvent e) {
 		JSONObject chatMessage = new JSONObject();
 		chatMessage.put("sender", e.getPlayer().getPlayerListName());
@@ -217,12 +222,12 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 		chat.add(chatMessage);
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR)
+	@EventHandler
 	public void onBlockBreak(BlockBreakEvent e) {
 		mapper.registerChunk(e.getBlock());
 	}
 
-	@EventHandler(priority = EventPriority.MONITOR)
+	@EventHandler
 	public void onBlockPlace(BlockPlaceEvent e) {
 		mapper.registerChunk(e.getBlock());
 	}
