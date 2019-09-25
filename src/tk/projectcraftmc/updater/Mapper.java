@@ -73,19 +73,27 @@ public class Mapper {
 			
 			if(cache != null && !cache.isEmpty()) {
 				for (Object location : cache) {
-					String[] loc = location.toString().split(",");
+					JSONObject loc = (JSONObject) location;
 	
-					current.add(new Location(plugin.getServer().getWorld(loc[0]), Integer.parseInt(loc[1]), 0, Integer.parseInt(loc[2])));
+					current.add(new Location(plugin.getServer().getWorld(loc.get("world").toString()), Integer.parseInt(loc.get("x").toString()), 0, Integer.parseInt(loc.get("z").toString())));
 				}
 	
 				writeChunkCache(new JSONArray());
 			}
-
-			for (Location loc : current) {
-				JSONArray data = new JSONArray();
-				data.add(Arrays.toString(generateMap(loc.getWorld(), loc.getBlockX(), loc.getBlockZ(), false, WIDTH, HEIGHT)));
-				plugin.sendDataToWebserver("name=" + loc.getWorld().getName() + "_" + loc.getBlockX() + "_" + loc.getBlockZ() + "&data=" + data.toJSONString(), plugin.getConfig().getString("image-api-url"));
+			
+			if(!current.isEmpty()) {
+				for (Location loc : current) {
+					JSONArray data = new JSONArray();
+					data.add(Arrays.toString(generateMap(loc.getWorld(), loc.getBlockX(), loc.getBlockZ(), false, WIDTH, HEIGHT)));
+					plugin.sendDataToWebserver("name=" + loc.getWorld().getName() + "_" + loc.getBlockX() + "_" + loc.getBlockZ() + "&data=" + data.toJSONString(), plugin.getConfig().getString("image-api-url"));
+					
+					if(plugin.getConfig().getBoolean("logging")) {
+						plugin.getLogger().info("Sent map " + loc.getWorld().getName() + "_" + loc.getBlockX() + "_" + loc.getBlockZ() + " to the webserver.");
+					}
+				}
 			}
+			
+			editedChunks.removeAll(current);
 		} catch (IOException | ParseException e) {
 			e.printStackTrace();
 		}
@@ -95,15 +103,23 @@ public class Mapper {
 
 	@SuppressWarnings("unchecked")
 	public void saveEditedChunks() {
+		if(editedChunks.isEmpty()) return;
+		
 		ArrayList<Location> copy = editedChunks;
 		plugin.getConfig().set("last-memory-clean", System.currentTimeMillis());
 		plugin.saveConfig();
+		
+		plugin.getServer().broadcastMessage("Writing memory to file. This may be laggy.");
 
 		try {
 			JSONArray cache = getChunkCache();
 
 			for (Location location : copy) {
-				String loc = location.getWorld().getUID() + "," + location.getBlockX() + "," + location.getBlockZ();
+				JSONObject loc = new JSONObject();
+				loc.put("world", location.getWorld().getName());
+				loc.put("x", location.getBlockX());
+				loc.put("z", location.getBlockZ());
+				
 				if (cache.contains(loc))
 					return;
 				cache.add(loc);
@@ -115,6 +131,8 @@ public class Mapper {
 		}
 
 		editedChunks.removeAll(copy);
+		
+		plugin.getServer().broadcastMessage("Memory clear complete.");
 	}
 
 	public void registerChunk(Block b) {
@@ -135,7 +153,7 @@ public class Mapper {
 	}
 
 	private void writeChunkCache(JSONArray data) throws IOException {
-		FileWriter cacheFile = new FileWriter(plugin.getDataFolder() + "/chunkCache.json");
+		FileWriter cacheFile = new FileWriter(plugin.getDataFolder() + "/chunkCache.json", false);
 		cacheFile.write(data.toJSONString());
 		cacheFile.close();
 	}
