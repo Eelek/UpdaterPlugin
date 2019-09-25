@@ -89,6 +89,8 @@ public class Mapper {
 		} catch (IOException | ParseException e) {
 			e.printStackTrace();
 		}
+		
+		plugin.getServer().broadcastMessage("Map updated.");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -195,6 +197,33 @@ public class Mapper {
 		}
 
 		return img;
+	}
+	
+	public void generateArea(World w, int startX, int startZ, int endX, int endZ) {
+		if(startX > endX) {
+			int tmp = startX;
+			startX = endX;
+			endX = tmp;
+		}
+		
+		if(startZ > endZ) {
+			int tmp = startZ;
+			startZ = endZ;
+			endZ = tmp;
+		}
+		
+		startX = (int) Math.floor(startX / (double) WIDTH) * WIDTH;
+		startZ = (int) Math.floor(startZ / (double) HEIGHT) * HEIGHT;
+		endX = (int) Math.ceil(endX / (double) WIDTH) * WIDTH;
+		endZ = (int) Math.ceil(endZ / (double) HEIGHT) * HEIGHT;
+		
+		for(int z = startZ; z < endZ; z += 128) {
+			for(int x = startX; x < endX; x += 128) {
+				registerChunk(w.getBlockAt(x, 0, z));
+			}
+		}
+		
+		updateMap();
 	}
 
 	private Block getHighestSolidAt(World w, int x, int z) {

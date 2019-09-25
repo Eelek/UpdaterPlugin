@@ -242,6 +242,18 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 				sender.sendMessage("player only");
 			}
 		}
+		
+		if(cmd.getName().equalsIgnoreCase("genarea")) {
+			if(args.length == 5) {
+				try {
+					mapper.generateArea(getServer().getWorld(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
+				} catch(NumberFormatException e) {
+					e.printStackTrace();
+				}
+			} else {
+				sender.sendMessage("Use /genarea <world> <startX> <startZ> <endX> <endZ>");
+			}
+		}
 
 		return false;
 	}

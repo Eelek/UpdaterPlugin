@@ -8,3 +8,5 @@ api-version: 1.13
 commands:
   genmap:
     description: dev
+  genarea:
+    description: dev
