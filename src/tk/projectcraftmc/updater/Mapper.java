@@ -221,17 +221,20 @@ public class Mapper {
 	
 	private JSONArray compressMap(JSONArray img, int compression, int size) {
 		JSONArray newImg = new JSONArray();
-		
-		for(int pixel = 0; pixel < (img.size() / 3) / (compression * compression); pixel++) {
+		int originalPixelCount = img.size() / 3;
+		int newPixelCount = originalPixelCount / (compression * compression);
+
+		for(int pixel = 0; pixel < newPixelCount; pixel++) {
 			int red = 0;
 			int green = 0;
 			int blue = 0;
 			
-			for(int z = 0; z < compression; z++) {
-				for(int x = 0; x < compression; x++) {
-					red += Integer.parseInt(img.get(3 * (x + z * size + pixel * compression)).toString());
-					green += Integer.parseInt(img.get(3 * (x + z * size + pixel * compression) + 1).toString());
-					blue += Integer.parseInt(img.get(3 * (x + z * size + pixel * compression) + 2).toString());
+			for (int z = 0; z < compression; z++) {
+				for (int x = 0; x < compression; x++) {
+					int curIndex = 3 * (x + z * size + pixel * compression * compression);
+					red 	+= Integer.parseInt(img.get(curIndex).toString());
+					green 	+= Integer.parseInt(img.get(curIndex + 1).toString());
+					blue 	+= Integer.parseInt(img.get(curIndex + 2).toString());
 				}
 			}
 			
