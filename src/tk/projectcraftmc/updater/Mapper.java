@@ -3,6 +3,7 @@ package tk.projectcraftmc.updater;
 import java.awt.Color;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -53,9 +54,7 @@ public class Mapper {
 	};
 	
 	private void loadColors() throws IOException, ParseException {
-		URL fileURL = getClass().getResource("/BlockMapColors.json");
-		File jsonFile = new File(fileURL.getFile());
-		FileReader fileReader = new FileReader(jsonFile);
+		FileReader fileReader = new FileReader(plugin.getDataFolder() + "/BlockMapColors.json");
 		
 		StringBuilder content = new StringBuilder();
 		
@@ -88,7 +87,8 @@ public class Mapper {
 				materialIndex.put(material, i);				
 			}
 			
-			Color color = new Color(Integer.parseInt(colorObj.get("r").toString()), 
+			Color color = new Color(
+					Integer.parseInt(colorObj.get("r").toString()), 
 	                Integer.parseInt(colorObj.get("g").toString()), 
 	                Integer.parseInt(colorObj.get("b").toString()), 
 	                Integer.parseInt(colorObj.get("a").toString()));
@@ -124,13 +124,14 @@ public class Mapper {
 		
 		if(!current.isEmpty()) {
 	    	for (SuperChunk c : current) {
-				JSONArray data = compressMap(generateMap(c.getWorld(), c.getX(), c.getZ(), plugin.CHUNKSIZE), plugin.COMPRESSION);
+				JSONArray data = compressMap(generateMap(c.getWorld(), c.getX(), c.getZ(), plugin.CHUNKSIZE), plugin.COMPRESSION, plugin.CHUNKSIZE);
+				//JSONArray data = generateMap(c.getWorld(), c.getX(), c.getZ(), plugin.CHUNKSIZE);	    		
 				
 				JSONObject metaData = new JSONObject();
 				metaData.put("x", c.getX());
 				metaData.put("z", c.getZ());
 				metaData.put("size", plugin.CHUNKSIZE);
-				metaData.put("world", c.getWorld().getName());
+				metaData.put("world", c.getWorld().getEnvironment().toString().toLowerCase());
 				metaData.put("isMiniMap", false);
 				
 				JSONObject complete = new JSONObject();
@@ -138,6 +139,10 @@ public class Mapper {
 				complete.put("metaData", metaData);
 				
 				plugin.sendDataToWebserver(complete.toJSONString(), plugin.getConfig().getString("api-upload-url"));
+				
+				FileWriter writer = new FileWriter(plugin.getDataFolder() + "/log.json");
+				writer.write(complete.toJSONString());
+				writer.close();
 			}
 		}
 		
@@ -214,27 +219,25 @@ public class Mapper {
 		return img;
 	}
 	
-	private JSONArray compressMap(JSONArray img, int compression) {
+	private JSONArray compressMap(JSONArray img, int compression, int size) {
 		JSONArray newImg = new JSONArray();
 		
 		for(int pixel = 0; pixel < (img.size() / 3) / (compression * compression); pixel++) {
 			int red = 0;
-			for(int r = 0; r < (compression * compression); r += 3) {
-				red += Integer.parseInt(img.get(r + pixel * 3).toString());
-			}
-			newImg.add(red / (compression * compression));
-			
 			int green = 0;
-			for(int g = 0; g < (compression * compression); g++) {
-				green += Integer.parseInt(img.get(g + pixel * 3).toString());
-			}
-			newImg.add(green / (compression * compression));
-			
 			int blue = 0;
-			for(int b = 0; b < (compression * compression); b++) {
-				blue += Integer.parseInt(img.get(b + pixel * 3).toString());
+			
+			for(int z = 0; z < compression; z++) {
+				for(int x = 0; x < compression; x++) {
+					red += Integer.parseInt(img.get(3 * (x + z * size + pixel * compression)).toString());
+					green += Integer.parseInt(img.get(3 * (x + z * size + pixel * compression) + 1).toString());
+					blue += Integer.parseInt(img.get(3 * (x + z * size + pixel * compression) + 2).toString());
+				}
 			}
-			newImg.add(blue / (compression * compression));
+			
+			newImg.add(Math.floorDiv(red, compression * compression));
+			newImg.add(Math.floorDiv(green, compression * compression));
+			newImg.add(Math.floorDiv(blue, compression * compression));
 		}
 		
 		return newImg;
@@ -242,6 +245,7 @@ public class Mapper {
 	
 	private Block getHighestSolidAt(World w, int x, int z) {
 		int y = w.getHighestBlockYAt(x, z);
+		
 		while(materialIndex.get(w.getBlockAt(x, y, z).getType()) == 0) { //Skip transparent blocks
 			y--;
 		}

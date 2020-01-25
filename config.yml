@@ -1,11 +1,11 @@
 #Config file
 
 #Webserver API url
-api-fetch-url: http://example.com/
-api-upload-url: http://example.com/
+api-fetch-url: "http://example.com/"
+api-upload-url: "http://example.com/"
 
 #API key
-api-key: example
+api-key: "example"
 
 #The time in seconds between map updates. (Default is 24 hours).
 render-update-time: 86400

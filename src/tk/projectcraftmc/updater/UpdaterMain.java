@@ -11,6 +11,8 @@ import java.net.URL;
 import javax.net.ssl.HttpsURLConnection;
 
 import org.bukkit.World;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -29,16 +31,20 @@ public class UpdaterMain extends JavaPlugin {
 		saveDefaultConfig();
 		getConfig().options().copyDefaults(true);
 		
+		if (!(new File(getDataFolder() + "/chunkCache.json")).exists()) {
+			saveResource("chunkCache.json", false);
+		}
+		
+		if (!(new File(getDataFolder() + "/BlockMapColors.json")).exists()) {
+			saveResource("BlockMapColors.json", false);
+		}
+		
 		fetchSetupData();
 
 		mapper = new Mapper(this);
 		watchdog = new Watchdog(this);
 
 		getServer().getPluginManager().registerEvents(watchdog, this);
-		
-		if (!(new File(getDataFolder() + "/chunkCache.json")).exists()) {
-			saveResource("chunkCache.json", false);
-		}
 	}
 
 	public void onDisable() {
@@ -48,15 +54,14 @@ public class UpdaterMain extends JavaPlugin {
 	}
 
 	public void sendDataToWebserver(String data, String URL) throws IOException {
-		data += "&API-key=" + getConfig().getString("api-key");
-		
-		URL serverURL = new URL(URL);
+		URL serverURL = new URL(URL + "?API-key=" + getConfig().getString("api-key"));
 		HttpsURLConnection conn = (HttpsURLConnection) serverURL.openConnection();
 
 		conn.setRequestMethod("POST");
 
 		conn.setRequestProperty("User-Agent", "Mozilla/5.0");
 
+		conn.setDoInput(true);
 		conn.setDoOutput(true);
 
 		DataOutputStream out = new DataOutputStream(conn.getOutputStream());
@@ -75,11 +80,13 @@ public class UpdaterMain extends JavaPlugin {
 	}
 
 	public String getDataFromWebserver(String URL) throws IOException {
-		URL serverURL = new URL(URL);
+		URL serverURL = new URL(URL + "?API-key=" + getConfig().getString("api-key"));
 		HttpsURLConnection conn = (HttpsURLConnection) serverURL.openConnection();
 
 		conn.setRequestMethod("GET");
 		conn.setRequestProperty("User-Agent", "Mozilla/5.0");
+		conn.setDoInput(true);
+		conn.setDoOutput(true);
 
 		if (conn.getResponseCode() > 200) {
 			throw new ConnectException("Couldn't get data from the webserver. (" + conn.getResponseCode() + " " + conn.getResponseMessage() + ")");
@@ -100,9 +107,9 @@ public class UpdaterMain extends JavaPlugin {
 		return response.toString();
 	}
 	
-	public SuperChunk getLightChunk(World w, int x, int z) {
-		x = Math.floorDiv(x * CHUNKSIZE, CHUNKSIZE);
-		z = Math.floorDiv(z * CHUNKSIZE, CHUNKSIZE);
+	public SuperChunk getSuperChunk(World w, int x, int z) {
+		x = Math.floorDiv(x, CHUNKSIZE) * CHUNKSIZE;
+		z = Math.floorDiv(z, CHUNKSIZE) * CHUNKSIZE;
 		
 		return new SuperChunk(w, x, z);
 	}
@@ -115,10 +122,24 @@ public class UpdaterMain extends JavaPlugin {
 			
 			COMPRESSION = Integer.parseInt(apidata.get("compression").toString());
 			CHUNKSIZE = Integer.parseInt(apidata.get("chunkSize").toString());
+			
+			getLogger().info("Compression: " + COMPRESSION + " Chunksize: " + CHUNKSIZE);
 		} catch (ParseException | IOException e) {
 			getLogger().severe("An error occured whilst initiating the Mapper.");
 			e.printStackTrace();
 		}
+	}
+	
+	public boolean onCommand(CommandSender sender, Command cmd, String commandlabel, String[] args) {
+		if(cmd.getName().equalsIgnoreCase("updatemap")) {
+			try {
+				mapper.updateMap();
+			} catch (IOException | ParseException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return false;
 	}
 }
 	

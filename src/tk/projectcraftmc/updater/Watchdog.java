@@ -54,9 +54,10 @@ public class Watchdog implements Listener {
 	}
 	
 	public void registerChunk(Block b) {
-		SuperChunk c = plugin.getLightChunk(b.getWorld(), b.getChunk().getX(), b.getChunk().getZ());
+		SuperChunk c = plugin.getSuperChunk(b.getWorld(), b.getX(), b.getZ());
 		if (!chunks.contains(c)) {
 			chunks.add(c);
+			System.out.println("Registered " + c.getX() + ", " + c.getZ());
 		}
 	}
 	

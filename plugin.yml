@@ -6,7 +6,5 @@ description: Map updater for ProjectCraft Map
 api-version: 1.13
 
 commands:
-  genmap:
-    description: dev
-  genarea:
+  updatemap:
     description: dev
