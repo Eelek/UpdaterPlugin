@@ -223,6 +223,7 @@ public class Mapper {
 		JSONArray newImg = new JSONArray();
 		int originalPixelCount = img.size() / 3;
 		int newPixelCount = originalPixelCount / (compression * compression);
+		int newWidth = Math.sqrt(newPixelCount);
 
 		for(int pixel = 0; pixel < newPixelCount; pixel++) {
 			int red = 0;
@@ -231,7 +232,10 @@ public class Mapper {
 			
 			for (int rz = 0; rz < compression; rz++) {
 				for (int rx = 0; rx < compression; rx++) {
-					int curIndex = 3 * (rx + rz * size + pixel * compression * compression);
+					int curPixelY 	= Math.floorDiv(pixel, newWidth);
+					int xOffset 	= curPixelY * compression * size;
+					int curIndex 	= 3 * (rx + rz * size + (pixel - curPixelY * newWidth) * compression + xOffset);
+
 					red 	+= Integer.parseInt(img.get(curIndex).toString());
 					green 	+= Integer.parseInt(img.get(curIndex + 1).toString());
 					blue 	+= Integer.parseInt(img.get(curIndex + 2).toString());
