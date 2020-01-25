@@ -11,35 +11,13 @@ import javax.net.ssl.HttpsURLConnection;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.json.simple.parser.ParseException;
 
-@SuppressWarnings("unchecked")
-public class UpdaterMain extends JavaPlugin implements Listener {
-
-	private String lastData;
+public class UpdaterMain extends JavaPlugin {
 	
-	private Runnable runnable;
-	
-	private JSONArray left;
-	private JSONArray joined;
-	private JSONArray chat;
-	
-	private int rateLimitCheck;
-	private boolean rateLimited;
-	
-	private Mapper mapper;
-	
-	private boolean cancel;
-	private int currentTaskId;
+	Mapper mapper;
+	Watchdog watchdog;
 
 	@Override
 	public void onEnable() {
@@ -47,86 +25,10 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 		getConfig().options().copyDefaults(true);
 
 		mapper = new Mapper(this);
+		watchdog = new Watchdog(this);
 
-		rateLimitCheck = 0;
-		rateLimited = false;
-
-		getServer().getPluginManager().registerEvents(this, this);
-
-		left = new JSONArray();
-		joined = new JSONArray();
-		chat = new JSONArray();
-
-		lastData = "";
-
-		cancel = false;
+		getServer().getPluginManager().registerEvents(watchdog, this);
 		
-		runnable = new Runnable() {
-			public void run() {
-				JSONObject data = new JSONObject();
-				JSONArray players = new JSONArray();
-
-				JSONArray currentLeft = left;
-				JSONArray currentJoined = joined;
-				JSONArray currentChat = chat;
-
-				for (Player p : getServer().getOnlinePlayers()) {
-					JSONObject player = new JSONObject();
-					player.put("username", p.getPlayerListName());
-					player.put("uuid", p.getUniqueId().toString());
-					player.put("x", Integer.valueOf(p.getLocation().getBlockX()));
-					player.put("y", Integer.valueOf(p.getLocation().getBlockY()));
-					player.put("z", Integer.valueOf(p.getLocation().getBlockZ()));
-					player.put("dim", p.getWorld().getEnvironment().toString());
-					players.add(player);
-				}
-
-				data.put("players", players);
-				data.put("left", currentLeft);
-				data.put("joined", currentJoined);
-				if (getConfig().getBoolean("send-chat"))
-					data.put("chat", currentChat);
-
-				data.put("current-time", Long.valueOf(System.currentTimeMillis()));
-				data.put("refresh-time", Integer.valueOf(getConfig().getInt("delay-time")));
-
-				try {
-					if (!rateLimited && !data.toJSONString().equals(lastData)) {
-						sendDataToWebserver("data=" + data.toJSONString(), getConfig().getString("api-url"));
-						lastData = data.toJSONString();
-					} else {
-						if (getConfig().getBoolean("logging")) {
-							getLogger().info("Rate-limit mode active, not sending data. (Rate-limit counter: " + rateLimitCheck + ").");
-						}
-
-						rateLimitCheck = rateLimitCheck - 1;
-
-						if (rateLimitCheck == 0) {
-							rateLimited = false;
-						}
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-				left.removeAll(currentLeft);
-				joined.removeAll(currentJoined);
-				chat.removeAll(currentChat);
-
-				if (System.currentTimeMillis() - getConfig().getLong("last-render-update") > (getConfig().getInt("render-update-time") * 1000)) {
-					mapper.updateMap();
-				}
-
-				if (System.currentTimeMillis() - getConfig().getLong("last-memory-clean") > (getConfig().getInt("memory-clean-update-time") * 1000)) {
-					mapper.saveEditedChunks();
-				}
-
-				if (cancel) {
-					getServer().getScheduler().cancelTask(currentTaskId);
-				}
-			}
-		};
-
 		if (!(new File(getDataFolder() + "/chunkCache.json")).exists()) {
 			saveResource("chunkCache.json", false);
 		}
@@ -134,6 +36,8 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 
 	public void onDisable() {
 		getServer().getScheduler().cancelTasks(this);
+		mapper = null;
+		watchdog = null;
 	}
 
 	public void sendDataToWebserver(String data, String URL) throws IOException {
@@ -187,57 +91,17 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 		return response.toString();
 	}
 
-	@EventHandler
-	public void onJoin(PlayerJoinEvent e) {
-		JSONObject player = new JSONObject();
-		player.put("username", e.getPlayer().getPlayerListName());
-		player.put("uuid", e.getPlayer().getUniqueId().toString());
-		joined.add(player);
-
-		if (getServer().getOnlinePlayers().size() == 1) {
-			getServer().getScheduler().cancelTasks(this);
-
-			currentTaskId = getServer().getScheduler().scheduleSyncRepeatingTask(this, runnable, 100L, getConfig().getInt("delay-time") * 20L);
-		}
-	}
-
-	@EventHandler
-	public void onLeave(PlayerQuitEvent e) {
-		JSONObject player = new JSONObject();
-		player.put("username", e.getPlayer().getPlayerListName());
-		player.put("uuid", e.getPlayer().getUniqueId().toString());
-		left.add(player);
-
-		if (getServer().getOnlinePlayers().size() == 1) {
-			cancel = true;
-		}
-	}
-
-	@EventHandler
-	public void onChat(AsyncPlayerChatEvent e) {
-		JSONObject chatMessage = new JSONObject();
-		chatMessage.put("sender", e.getPlayer().getPlayerListName());
-		chatMessage.put("time", Long.valueOf(System.currentTimeMillis()));
-		chatMessage.put("message", e.getMessage());
-		chat.add(chatMessage);
-	}
-
-	@EventHandler
-	public void onBlockBreak(BlockBreakEvent e) {
-		mapper.registerChunk(e.getBlock());
-	}
-
-	@EventHandler
-	public void onBlockPlace(BlockPlaceEvent e) {
-		mapper.registerChunk(e.getBlock());
-	}
-
 	public boolean onCommand(CommandSender sender, Command cmd, String commandlabel, String[] args) {
 		if (cmd.getName().equalsIgnoreCase("genmap")) {
 			if (sender instanceof Player) {
 				Player p = (Player) sender;
-				mapper.registerChunk(p.getLocation().getBlock());
-				mapper.updateMap();
+				watchdog.registerChunk(p.getLocation().getBlock());
+				
+				try {
+					mapper.updateMap();
+				} catch (IOException | ParseException e) {
+					e.printStackTrace();
+				}
 			} else {
 				sender.sendMessage("player only");
 			}
@@ -258,3 +122,4 @@ public class UpdaterMain extends JavaPlugin implements Listener {
 		return false;
 	}
 }
+	
