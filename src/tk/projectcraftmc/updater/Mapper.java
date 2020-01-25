@@ -229,9 +229,9 @@ public class Mapper {
 			int green = 0;
 			int blue = 0;
 			
-			for (int z = 0; z < compression; z++) {
-				for (int x = 0; x < compression; x++) {
-					int curIndex = 3 * (x + z * size + pixel * compression * compression);
+			for (int rz = 0; rz < compression; rz++) {
+				for (int rx = 0; rx < compression; rx++) {
+					int curIndex = 3 * (rx + rz * size + pixel * compression * compression);
 					red 	+= Integer.parseInt(img.get(curIndex).toString());
 					green 	+= Integer.parseInt(img.get(curIndex + 1).toString());
 					blue 	+= Integer.parseInt(img.get(curIndex + 2).toString());
