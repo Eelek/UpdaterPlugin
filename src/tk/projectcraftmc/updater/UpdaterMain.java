@@ -7,22 +7,29 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.URL;
+
 import javax.net.ssl.HttpsURLConnection;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
+
+import org.bukkit.World;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 public class UpdaterMain extends JavaPlugin {
 	
 	Mapper mapper;
 	Watchdog watchdog;
+	
+	int COMPRESSION;
+	int CHUNKSIZE;
 
 	@Override
 	public void onEnable() {
 		saveDefaultConfig();
 		getConfig().options().copyDefaults(true);
+		
+		fetchSetupData();
 
 		mapper = new Mapper(this);
 		watchdog = new Watchdog(this);
@@ -41,6 +48,8 @@ public class UpdaterMain extends JavaPlugin {
 	}
 
 	public void sendDataToWebserver(String data, String URL) throws IOException {
+		data += "&API-key=" + getConfig().getString("api-key");
+		
 		URL serverURL = new URL(URL);
 		HttpsURLConnection conn = (HttpsURLConnection) serverURL.openConnection();
 
@@ -90,36 +99,26 @@ public class UpdaterMain extends JavaPlugin {
 
 		return response.toString();
 	}
-
-	public boolean onCommand(CommandSender sender, Command cmd, String commandlabel, String[] args) {
-		if (cmd.getName().equalsIgnoreCase("genmap")) {
-			if (sender instanceof Player) {
-				Player p = (Player) sender;
-				watchdog.registerChunk(p.getLocation().getBlock());
-				
-				try {
-					mapper.updateMap();
-				} catch (IOException | ParseException e) {
-					e.printStackTrace();
-				}
-			} else {
-				sender.sendMessage("player only");
-			}
-		}
+	
+	public SuperChunk getLightChunk(World w, int x, int z) {
+		x = Math.floorDiv(x * CHUNKSIZE, CHUNKSIZE);
+		z = Math.floorDiv(z * CHUNKSIZE, CHUNKSIZE);
 		
-		if(cmd.getName().equalsIgnoreCase("genarea")) {
-			if(args.length == 5) {
-				try {
-					mapper.generateArea(getServer().getWorld(args[0]), Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
-				} catch(NumberFormatException e) {
-					e.printStackTrace();
-				}
-			} else {
-				sender.sendMessage("Use /genarea <world> <startX> <startZ> <endX> <endZ>");
-			}
+		return new SuperChunk(w, x, z);
+	}
+	
+	private void fetchSetupData() {
+		try {
+			JSONParser parser = new JSONParser();
+			
+			JSONObject apidata = (JSONObject) parser.parse(getDataFromWebserver(getConfig().getString("api-fetch-url")));
+			
+			COMPRESSION = Integer.parseInt(apidata.get("compression").toString());
+			CHUNKSIZE = Integer.parseInt(apidata.get("chunkSize").toString());
+		} catch (ParseException | IOException e) {
+			getLogger().severe("An error occured whilst initiating the Mapper.");
+			e.printStackTrace();
 		}
-
-		return false;
 	}
 }
 	

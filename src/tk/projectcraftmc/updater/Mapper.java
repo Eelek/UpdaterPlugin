@@ -118,83 +118,92 @@ public class Mapper {
 	public void updateMap() throws IOException, ParseException {
 		plugin.getServer().broadcastMessage("Updating map, this may be laggy.");
 		
-		ArrayList<LightChunk> current = plugin.watchdog.getEditedChunks();
+		ArrayList<SuperChunk> current = plugin.watchdog.getEditedChunks();
 		
 		JSONParser parser = new JSONParser();
 		
-		JSONArray minimaps = (JSONArray) parser.parse(plugin.getDataFromWebserver(plugin.getConfig().getString("api-fetch-url")));
-		
 		if(!current.isEmpty()) {
-	    	for (LightChunk c : current) {
-				//TODO: Rewrite generation
+	    	for (SuperChunk c : current) {
+				JSONArray data = compressMap(generateMap(c.getWorld(), c.getX(), c.getZ(), plugin.CHUNKSIZE), plugin.COMPRESSION);
+				
+				JSONObject metaData = new JSONObject();
+				metaData.put("x", c.getX());
+				metaData.put("z", c.getZ());
+				metaData.put("size", plugin.CHUNKSIZE);
+				metaData.put("world", c.getWorld().getName());
+				metaData.put("isMiniMap", false);
+				
+				JSONObject complete = new JSONObject();
+				complete.put("data", data);
+				complete.put("metaData", metaData);
+				
+				plugin.sendDataToWebserver(complete.toJSONString(), plugin.getConfig().getString("api-upload-url"));
 			}
 		}
 		
 		plugin.watchdog.clearChunkCache();
 		
 		//TODO: Update minimaps
+		JSONObject apidata = (JSONObject) parser.parse(plugin.getDataFromWebserver(plugin.getConfig().getString("api-fetch-url")));
+		JSONArray minimaps = (JSONArray) apidata.get("miniMaps");
 		
 		plugin.getServer().broadcastMessage("Map updated.");
 		System.gc();
 	}
 	
-	private JSONArray generateMap(World w, int xCenter, int zCenter, boolean useAsCenter, int width, int height) {
+	private JSONArray generateMap(World w, int startX, int startZ, int size) {
 		JSONArray img = new JSONArray();
 
-		int minX = Math.floorDiv(xCenter, width) * width;
-		int minZ = Math.floorDiv(zCenter, height) * height;
+		int minX = Math.floorDiv(startX, size) * size;
+		int minZ = Math.floorDiv(startZ, size) * size;
 
-		for (int z = minZ; z < height; z++) {
-			for (int x = minX; x < width; x++) {
-				Block b = getHighestSolidAt(w, x, z);
-				JSONArray pixel = new JSONArray();
+		for (int z = 0; z < size; z++) {
+			for (int x = 0; x < size; x++) {
+				Block b = getHighestSolidAt(w, x + minX, z + minZ);
 
 				try {
 					if(materialIndex.get(b.getType()) == 12) { //Water, color is depth dependant
-						if(getHighestSolidAt(w, x, z - 1).getType() == Material.WATER) {
-							if(b.getY() - getLowestWaterBlock(w, x, z).getY() > 3) { //Darker color (1st variant)
+						if(getHighestSolidAt(w, x + minX, z + minZ - 1).getType() == Material.WATER) {
+							if(b.getY() - getLowestWaterBlock(w, x + minX, z + minZ).getY() > 3) { //Darker color (1st variant)
 								Color mColor = getMaterialColor(b.getType(), 0);
-								pixel.add(mColor.getRed());
-								pixel.add(mColor.getGreen());
-								pixel.add(mColor.getBlue());
-							} else if(b.getY() - getLowestWaterBlock(w, x, z).getY()  <= 3 && b.getY() - getLowestWaterBlock(w, x + minX, z + minZ).getY() > 1) { //Normal color (2nd variant)
+								img.add(mColor.getRed());
+								img.add(mColor.getGreen());
+								img.add(mColor.getBlue());
+							} else if(b.getY() - getLowestWaterBlock(w, x + minX, z + minZ).getY()  <= 3 && b.getY() - getLowestWaterBlock(w, x + minX, z + minZ).getY() > 1) { //Normal color (2nd variant)
 								Color mColor = getMaterialColor(b.getType(), 1);
-								pixel.add(mColor.getRed());
-								pixel.add(mColor.getGreen());
-								pixel.add(mColor.getBlue());
-							} else if(b.getY() - getLowestWaterBlock(w, x, z).getY() <= 1) { //Ligher color (3rd variant aka base color)
+								img.add(mColor.getRed());
+								img.add(mColor.getGreen());
+								img.add(mColor.getBlue());
+							} else if(b.getY() - getLowestWaterBlock(w, x + minX, z + minZ).getY() <= 1) { //Ligher color (3rd variant aka base color)
 								Color mColor = getMaterialColor(b.getType(), 2);
-								pixel.add(mColor.getRed());
-								pixel.add(mColor.getGreen());
-								pixel.add(mColor.getBlue());
+								img.add(mColor.getRed());
+								img.add(mColor.getGreen());
+								img.add(mColor.getBlue());
 							}		
 						} else {
 							Color mColor = getMaterialColor(b.getType(), 0);
-							pixel.add(mColor.getRed());
-							pixel.add(mColor.getGreen());
-							pixel.add(mColor.getBlue());
+							img.add(mColor.getRed());
+							img.add(mColor.getGreen());
+							img.add(mColor.getBlue());
 						}
 					} else { //Other blocks, color depends of the Y value of the block north of it.
-						if(getHighestSolidAt(w, x, z - 1).getY() > b.getY()) { //Darker color (1st variant)
+						if(getHighestSolidAt(w, x + minX, z + minZ - 1).getY() > b.getY()) { //Darker color (1st variant)
 							Color mColor = getMaterialColor(b.getType(), 0);
-							pixel.add(mColor.getRed());
-							pixel.add(mColor.getGreen());
-							pixel.add(mColor.getBlue());
-						} else if(getHighestSolidAt(w, x, z - 1).getY() == b.getY()) { //Normal color (2nd variant)
+							img.add(mColor.getRed());
+							img.add(mColor.getGreen());
+							img.add(mColor.getBlue());
+						} else if(getHighestSolidAt(w, x + minX, z + minZ - 1).getY() == b.getY()) { //Normal color (2nd variant)
 							Color mColor = getMaterialColor(b.getType(), 1);
-							pixel.add(mColor.getRed());
-							pixel.add(mColor.getGreen());
-							pixel.add(mColor.getBlue());
-						} else if(getHighestSolidAt(w, x, z - 1).getY() < b.getY()) { //Ligher color (3rd variant aka base color)
+							img.add(mColor.getRed());
+							img.add(mColor.getGreen());
+							img.add(mColor.getBlue());
+						} else if(getHighestSolidAt(w, x + minX, z + minZ - 1).getY() < b.getY()) { //Ligher color (3rd variant aka base color)
 							Color mColor = getMaterialColor(b.getType(), 2);
-							pixel.add(mColor.getRed());
-							pixel.add(mColor.getGreen());
-							pixel.add(mColor.getBlue());
+							img.add(mColor.getRed());
+							img.add(mColor.getGreen());
+							img.add(mColor.getBlue());
 						}	
 					}
-					
-					img.add(pixel);
-					pixel = null;
 				} catch(NullPointerException e) {
 					plugin.getLogger().warning("Unknown Material: " + b.getType() + "\n");
 					e.printStackTrace();
@@ -205,39 +214,32 @@ public class Mapper {
 		return img;
 	}
 	
-	/*
-	public void generateArea(World w, int startX, int startZ, int endX, int endZ) {
-		if(startX > endX) {
-			int tmp = startX;
-			startX = endX;
-			endX = tmp;
-		}
+	private JSONArray compressMap(JSONArray img, int compression) {
+		JSONArray newImg = new JSONArray();
 		
-		if(startZ > endZ) {
-			int tmp = startZ;
-			startZ = endZ;
-			endZ = tmp;
-		}
-		
-		startX = (int) Math.floor(startX / (double) WIDTH) * WIDTH;
-		startZ = (int) Math.floor(startZ / (double) HEIGHT) * HEIGHT;
-		endX = (int) Math.ceil(endX / (double) WIDTH) * WIDTH;
-		endZ = (int) Math.ceil(endZ / (double) HEIGHT) * HEIGHT;
-		
-		for(int z = startZ; z < endZ; z += 16) {
-			for(int x = startX; x < endX; x += 16) {
-				plugin.watchdog.registerChunk(w.getBlockAt(x, 0, z)); //Make sure all chunks in area will be exported
+		for(int pixel = 0; pixel < (img.size() / 3) / (compression * compression); pixel++) {
+			int red = 0;
+			for(int r = 0; r < (compression * compression); r += 3) {
+				red += Integer.parseInt(img.get(r + pixel * 3).toString());
 			}
+			newImg.add(red / (compression * compression));
+			
+			int green = 0;
+			for(int g = 0; g < (compression * compression); g++) {
+				green += Integer.parseInt(img.get(g + pixel * 3).toString());
+			}
+			newImg.add(green / (compression * compression));
+			
+			int blue = 0;
+			for(int b = 0; b < (compression * compression); b++) {
+				blue += Integer.parseInt(img.get(b + pixel * 3).toString());
+			}
+			newImg.add(blue / (compression * compression));
 		}
 		
-		try {
-			updateMap();
-		} catch (IOException | ParseException e) {
-			e.printStackTrace();
-		}
+		return newImg;
 	}
-	*/
-
+	
 	private Block getHighestSolidAt(World w, int x, int z) {
 		int y = w.getHighestBlockYAt(x, z);
 		while(materialIndex.get(w.getBlockAt(x, y, z).getType()) == 0) { //Skip transparent blocks

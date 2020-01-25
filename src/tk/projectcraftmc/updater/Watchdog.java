@@ -20,12 +20,12 @@ import org.json.simple.parser.ParseException;
 public class Watchdog implements Listener {
 	
 	private UpdaterMain plugin;
-	private ArrayList<LightChunk> chunks;
+	private ArrayList<SuperChunk> chunks;
 	private Runnable watchdog;
 	
 	public Watchdog(UpdaterMain instance) {
 		this.plugin = instance;
-		this.chunks = new ArrayList<LightChunk>();
+		this.chunks = new ArrayList<SuperChunk>();
 		this.watchdog = new Runnable() {
 			
 			@Override
@@ -54,23 +54,23 @@ public class Watchdog implements Listener {
 	}
 	
 	public void registerChunk(Block b) {
-		LightChunk c = new LightChunk(b.getWorld(), b.getChunk().getX(), b.getChunk().getZ());
+		SuperChunk c = plugin.getLightChunk(b.getWorld(), b.getChunk().getX(), b.getChunk().getZ());
 		if (!chunks.contains(c)) {
 			chunks.add(c);
 		}
 	}
 	
-	public ArrayList<LightChunk> getEditedChunks() throws FileNotFoundException, IOException, ParseException {
-		ArrayList<LightChunk> editedChunks = new ArrayList<LightChunk>();
+	public ArrayList<SuperChunk> getEditedChunks() throws FileNotFoundException, IOException, ParseException {
+		ArrayList<SuperChunk> editedChunks = new ArrayList<SuperChunk>();
 		
 		JSONArray cacheJSON = getChunkCache();
 		for(int c = 0; c < cacheJSON.size(); c++) {
 			JSONObject chunk = (JSONObject) cacheJSON.get(c);
-			editedChunks.add(LightChunk.deserialize(chunk));
+			editedChunks.add(SuperChunk.deserialize(chunk));
 		}
 		
-		ArrayList<LightChunk> copy = chunks;
-		for(LightChunk c : copy) {
+		ArrayList<SuperChunk> copy = chunks;
+		for(SuperChunk c : copy) {
 			if(editedChunks.contains(c)) continue;
 			
 			editedChunks.add(c);
@@ -86,9 +86,9 @@ public class Watchdog implements Listener {
 		plugin.getServer().broadcastMessage("Writing memory to file. This may be laggy.");
 
 		JSONArray cacheJSON = getChunkCache();
-		ArrayList<LightChunk> copy = chunks;
+		ArrayList<SuperChunk> copy = chunks;
 
-		for (LightChunk c : copy) {
+		for (SuperChunk c : copy) {
 		    JSONObject chunk = c.serialize();
 		    
 		    if(cacheJSON.contains(c)) return;
