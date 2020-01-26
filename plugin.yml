@@ -8,3 +8,7 @@ api-version: 1.13
 commands:
   updatemap:
     description: dev
+  setcompression:
+    description: dev
+  clearcache:
+    description: dev
