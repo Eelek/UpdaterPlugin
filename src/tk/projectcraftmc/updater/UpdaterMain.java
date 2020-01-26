@@ -10,7 +10,6 @@ import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -25,6 +24,8 @@ public class UpdaterMain extends JavaPlugin {
 	
 	int COMPRESSION;
 	int CHUNKSIZE;
+	
+	boolean updating = false;
 
 	@Override
 	public void onEnable() {

@@ -42,7 +42,7 @@ public class Watchdog implements Listener {
 		};
 		
 		long delaytime = plugin.getConfig().getInt("memory-clean-update-time") * 20L;
-		plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, watchdog, delaytime, delaytime);
+		plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, watchdog, delaytime / 2L, delaytime);
 	}
 	
 	@EventHandler (priority = EventPriority.MONITOR)
@@ -98,7 +98,7 @@ public class Watchdog implements Listener {
 		    cacheJSON.add(chunk);
 		}
 
-		writeChunkCache(cacheJSON, true);
+		writeChunkCache(cacheJSON, false);
 
 		chunks.removeAll(copy);
 		

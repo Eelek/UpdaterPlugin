@@ -1,7 +1,7 @@
 name: MapUpdater
 main: tk.projectcraftmc.updater.UpdaterMain
 author: Eelek
-version: 1.1
+version: 1.0
 description: Map updater for ProjectCraft Map
 api-version: 1.13
 
