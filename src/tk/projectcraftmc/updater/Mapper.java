@@ -194,7 +194,7 @@ public class Mapper {
 		int minZ = Math.floorDiv(startZ, size) * size;
 		
 		ArrayList<ChunkSnapshot> chunks = new ArrayList<ChunkSnapshot>();
-		int totalChunks = (int) Math.ceil((size + 1) * size / (16 * 16));
+		int totalChunks = (int) Math.ceil((size) * size / (16 * 16)) + size / 16;
 		
 		for(int c = 0; c < totalChunks; c++) {
 			chunks.add(w.getChunkAt(minX + c, minZ + c - size).getChunkSnapshot());
