@@ -5,7 +5,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -54,10 +56,9 @@ public class Watchdog implements Listener {
 	}
 	
 	public void registerChunk(Block b) {
-		SuperChunk c = plugin.getSuperChunk(b.getWorld(), b.getX(), b.getZ());
-		if (!chunks.contains(c)) {
+		SuperChunk c = getSuperChunk(b.getWorld(), b.getX(), b.getZ());
+		if (!containsSuperChunk(chunks, c)) {
 			chunks.add(c);
-			System.out.println("Registered " + c.getX() + ", " + c.getZ());
 		}
 	}
 	
@@ -72,7 +73,7 @@ public class Watchdog implements Listener {
 		
 		ArrayList<SuperChunk> copy = chunks;
 		for(SuperChunk c : copy) {
-			if(editedChunks.contains(c)) continue;
+			if(containsSuperChunk(editedChunks, c)) continue;
 			
 			editedChunks.add(c);
 		}
@@ -123,6 +124,30 @@ public class Watchdog implements Listener {
 		FileWriter cacheFile = new FileWriter(plugin.getDataFolder() + "/chunkCache.json", append);
 		cacheFile.write(data.toJSONString());
 		cacheFile.close();
+	}
+	
+	private SuperChunk getSuperChunk(World w, int x, int z) {
+		x = Math.floorDiv(x, plugin.CHUNKSIZE) * plugin.CHUNKSIZE;
+		z = Math.floorDiv(z, plugin.CHUNKSIZE) * plugin.CHUNKSIZE;
+		
+		return new SuperChunk(w, x, z);
+	}
+	
+	private boolean containsSuperChunk(List<SuperChunk> l, World w, int x, int z) {
+		boolean found = false;
+		
+		for(SuperChunk c : l) {
+			if(c.getWorld() == w && c.getX() == x && c.getZ() == z) {
+				found = true;
+				break;
+			}
+		}
+		
+		return found;
+	}
+	
+	private boolean containsSuperChunk(List<SuperChunk> l, SuperChunk s) {
+		return containsSuperChunk(l, s.getWorld(), s.getX(), s.getZ());
 	}
 	
 }

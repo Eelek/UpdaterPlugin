@@ -107,23 +107,14 @@ public class UpdaterMain extends JavaPlugin {
 		return response.toString();
 	}
 	
-	public SuperChunk getSuperChunk(World w, int x, int z) {
-		x = Math.floorDiv(x, CHUNKSIZE) * CHUNKSIZE;
-		z = Math.floorDiv(z, CHUNKSIZE) * CHUNKSIZE;
-		
-		return new SuperChunk(w, x, z);
-	}
-	
 	private void fetchSetupData() {
 		try {
 			JSONParser parser = new JSONParser();
 			
 			JSONObject apidata = (JSONObject) parser.parse(getDataFromWebserver(getConfig().getString("api-fetch-url")));
 			
-			COMPRESSION = Integer.parseInt(apidata.get("compression").toString());
+			COMPRESSION = (int) Math.pow(2, Integer.parseInt(apidata.get("compression").toString()) - 1);
 			CHUNKSIZE = Integer.parseInt(apidata.get("chunkSize").toString());
-			
-			getLogger().info("Compression: " + COMPRESSION + " Chunksize: " + CHUNKSIZE);
 		} catch (ParseException | IOException e) {
 			getLogger().severe("An error occured whilst initiating the Mapper.");
 			e.printStackTrace();
@@ -137,6 +128,20 @@ public class UpdaterMain extends JavaPlugin {
 			} catch (IOException | ParseException e) {
 				e.printStackTrace();
 			}
+		}
+		
+		if(cmd.getName().equalsIgnoreCase("setcompression")) {
+			this.COMPRESSION = (int) Math.pow(2, Integer.parseInt(args[0]) - 1);
+			sender.sendMessage("done");
+		}
+		
+		if(cmd.getName().equalsIgnoreCase("clearcache")) {
+			try {
+				watchdog.clearChunkCache();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			sender.sendMessage("cleared cache");
 		}
 		
 		return false;

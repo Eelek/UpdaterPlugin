@@ -1,11 +1,9 @@
 package tk.projectcraftmc.updater;
 
 import java.awt.Color;
-import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -219,29 +217,36 @@ public class Mapper {
 		return img;
 	}
 	
-	private JSONArray compressMap(JSONArray img, int compression, int size) {
-		JSONArray newImg = new JSONArray();
-		
-		for(int pixel = 0; pixel < (img.size() / 3) / (compression * compression); pixel++) {
-			int red = 0;
-			int green = 0;
-			int blue = 0;
-			
-			for(int z = 0; z < compression; z++) {
-				for(int x = 0; x < compression; x++) {
-					red += Integer.parseInt(img.get(3 * (x + z * size + pixel * compression)).toString());
-					green += Integer.parseInt(img.get(3 * (x + z * size + pixel * compression) + 1).toString());
-					blue += Integer.parseInt(img.get(3 * (x + z * size + pixel * compression) + 2).toString());
-				}
-			}
-			
-			newImg.add(Math.floorDiv(red, compression * compression));
-			newImg.add(Math.floorDiv(green, compression * compression));
-			newImg.add(Math.floorDiv(blue, compression * compression));
-		}
-		
-		return newImg;
-	}
+	private JSONArray compressMap(JSONArray img, int compression, int side) {
+        JSONArray newImg = new JSONArray();
+        int newPixelCount = (img.size() / 3) / (compression * compression);
+        int newWidth = (int) Math.floor(Math.sqrt(newPixelCount));
+
+        for(int pixel = 0; pixel < newPixelCount; pixel++) {
+            int red = 0;
+            int green = 0;
+            int blue = 0;
+            
+            for (int rz = 0; rz < compression; rz++) {
+                for (int rx = 0; rx < compression; rx++) {
+                    int curPixelY = Math.floorDiv(pixel, newWidth);
+                    int curPixelX = pixel - curPixelY * newWidth;
+                    int yOffset   = curPixelY * compression * side;
+                    int curIndex  = 3 * (rx + rz * side + curPixelX * compression + yOffset);
+
+                    red   += Integer.parseInt(img.get(curIndex).toString());
+                    green += Integer.parseInt(img.get(curIndex + 1).toString());
+                    blue  += Integer.parseInt(img.get(curIndex + 2).toString());
+                }
+            }
+            
+            newImg.add(Math.floorDiv(red, compression * compression));
+            newImg.add(Math.floorDiv(green, compression * compression));
+            newImg.add(Math.floorDiv(blue, compression * compression));
+        }
+        
+        return newImg;
+    }
 	
 	private Block getHighestSolidAt(World w, int x, int z) {
 		int y = w.getHighestBlockYAt(x, z);
