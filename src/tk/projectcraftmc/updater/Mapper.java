@@ -197,7 +197,7 @@ public class Mapper {
 		int totalChunks = (int) Math.ceil((size) * size / (16 * 16)) + size / 16;
 		
 		for(int c = 0; c < totalChunks; c++) {
-			chunks.add(w.getChunkAt(minX + c, minZ + c - size).getChunkSnapshot());
+			chunks.add(w.getChunkAt(minX + c * 16, minZ + c * 16 - size).getChunkSnapshot());
 			System.out.println("Chunk loading: " + c + " / " + (totalChunks - 1));
 		}
 		
@@ -207,35 +207,15 @@ public class Mapper {
 			
 			for(int rz = 0; rz < 16; rz++) {
 				for(int rx = 0; rx < 16; rx++) {
+					if(rz > 0) { //TODO: Update chunkloading to only load two rows.
+						northChunk = chunk;
+					}
+
 					int y = getHighestSolidAt(chunk, rx, rz);
 					Material m = chunk.getBlockType(rx, y, rz);
-					
 					int northY = getHighestSolidAt(north, rx, rz);
 					
-					Color mColor = null;
-					
-					if(materialIndex.get(m) == 12) { //Water, color is depth dependant
-						if(north.getBlockType(rz, northY, rz) == Material.WATER) { //In case of water, get depth
-							northY = getLowestWaterBlock(north, rx, rz);
-							if(y - northY > 3) { //Darker color (1st variant)
-								mColor = colorIndex.get(materialIndex.get(m) * 4);
-							} else if(y - northY  <= 3 && y - northY > 1) { //Normal color (2nd variant)
-								mColor = colorIndex.get(materialIndex.get(m) * 4 + 1);
-							} else { //Ligher color (3rd variant aka base color)
-								mColor = colorIndex.get(materialIndex.get(m) * 4 + 2);
-							}		
-						} else { //Plants etc
-							mColor = colorIndex.get(materialIndex.get(m) * 4);
-						}
-					} else { //Other blocks, color depends of the Y value of the block north of it.
-						if(northY > y) { //Darker color (1st variant)
-							mColor = colorIndex.get(materialIndex.get(m) * 4);
-						} else if(northY == y) { //Normal color (2nd variant)
-							mColor = colorIndex.get(materialIndex.get(m) * 4 + 1);
-						} else { //Ligher color (3rd variant aka base color)
-							mColor = colorIndex.get(materialIndex.get(m) * 4 + 2);
-						}	
-					}
+					Color mColor = getBlockColor(materialIndex.get(m), y - northY);
 					
 					img.add(mColor.getRed());					
 					img.add(mColor.getGreen());
@@ -245,6 +225,18 @@ public class Mapper {
 		}
 		
 		return img;
+	}
+
+	private Color getBlockColor(int mIndex, int dy) {
+        if (mIndex == 12) { 										
+			if (dY > 3) 			return 	colorIndex.get(mIndex * 4); 			
+			if (dy > 1 && dy <= 3)	return 	colorIndex.get(mIndex * 4 + 1);
+			return 							colorIndex.get(mIndex * 4 + 2);
+		} 
+		if (dy > 0) 	return colorIndex.get(mIndex * 4);
+		if (dY == 0) 	return colorIndex.get(mIndex * 4 + 1);
+		
+		return colorIndex.get(mIndex * 4 + 2);
 	}
 	
 	/*
@@ -368,20 +360,10 @@ public class Mapper {
 	private int getHighestSolidAt(ChunkSnapshot chunk, int x, int z) {
 		int y = chunk.getHighestBlockYAt(x, z);
 		
-		while(materialIndex.get(chunk.getBlockType(x, y, z)) == 0) { //Skip transparent blocks
+		while(materialIndex.get(chunk.getBlockType(x, y, z)) == 0 || materialIndex.get(chunk.getBlockType(x, y, z)) == 12) { //Skip transparent blocks
 			y--;
 		}
 		
 		return y;
-	}
-	
-	private int getLowestWaterBlock(ChunkSnapshot chunk, int x, int z) {
-		int y = chunk.getHighestBlockYAt(x, z);
-		
-		while(materialIndex.get(chunk.getBlockType(x, y, z)) == 0 || materialIndex.get(chunk.getBlockType(x, y, z)) == 12) { //Water blocks
-			y--;
-		}
-		
-		return y + 1;
 	}
 }
