@@ -195,10 +195,11 @@ public class Mapper {
 		
 		ArrayList<ChunkSnapshot> cache = new ArrayList<ChunkSnapshot>();
 		
-		for(int nz = 0; nz < (size + 1) / 16; nz++) {
-			for(int nx = 0; nx < size / 16; nx++) {
-				cache.add(w.getChunkAt(minX + nx * 16, minZ - size + nz * 16).getChunkSnapshot());
-				System.out.println("Added chunk");
+		for(int nz = 0; nz < size / 16; nz++) { //TODO: Fix
+			for(int nx = 0; nx < (size + 16) / 16; nx++) {
+				int zOffset = Math.floorDiv(minZ + nx * 16, 16) * 16;
+				int xOffset = Math.floorDiv(minX - size / 16 + nz * 16, 16) * 16;
+				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot());
 			}
 		}
 		
@@ -206,10 +207,10 @@ public class Mapper {
 			ChunkSnapshot chunk = null;
 			ChunkSnapshot north = null;
 			
-			if(cache.size() <= size / 16) {
-				chunk = cache.get(cache.size() - 1);
-			} else {
+			if(cache.size() > size / 16) {
 				chunk = cache.get(size / 16);
+			} else {
+				chunk = cache.get(0);
 			}
 			
 			for(int rz = 0; rz < 16; rz++) {
@@ -223,11 +224,11 @@ public class Mapper {
 				for(int rx = 0; rx < 16; rx++) {
 					int y = getHighestSolidAt(chunk, rx, rz);
 					Material m = chunk.getBlockType(rx, y, rz);
-					int northY = getHighestSolidAt(north, rx, rz);
+					int northY = getHighestSolidAt(north, rx, 15);
 					
 					Color mColor = getBlockColor(materialIndex.get(m), y - northY);
 					
-					img.add(mColor.getRed());					
+					img.add(mColor.getRed());				
 					img.add(mColor.getGreen());
 					img.add(mColor.getBlue());
 				}
@@ -249,93 +250,6 @@ public class Mapper {
 		if (dY == 0) 	return colorIndex.get(mIndex * 4 + 1);
 						return colorIndex.get(mIndex * 4 + 2);
 	}
-	
-	/*
-	private JSONArray generateMap(World w, int startX, int startZ, int size) {
-		JSONArray img = new JSONArray();
-
-		int minX = Math.floorDiv(startX, size) * size;
-		int minZ = Math.floorDiv(startZ, size) * size;
-		
-		ChunkSnapshot chunk = w.getChunkAt(minX, minZ).getChunkSnapshot();
-		ChunkSnapshot northChunk = null;
-		if(startZ - minZ == 0) {
-			northChunk = w.getChunkAt(minX, minZ - 1).getChunkSnapshot();
-		} else {
-			northChunk = chunk;
-		}
-		
-		int zChunkCounter = 0;
-
-		for (int z = 0; z < size; z++) {
-			for (int x = 0; x < size; x++) {
-				int chunkX = x + minX - Math.floorDiv(x + minX, 16) * 16; //chunk.getX() just returns 0. :/
-				int chunkZ = z + minZ - Math.floorDiv(z + minZ, 16) * 16;
-				
-				if(zChunkCounter == 0 && z != 0) {
-					northChunk = chunk;
-				}
-				
-				if(zChunkCounter > 15) {
-					northChunk = chunk;
-					chunk = w.getChunkAt(x + minX, z + minZ).getChunkSnapshot();
-					zChunkCounter = 0;
-				}
-				
-				if(xChunkCounter > 15 && zChunkCounter < 16) {
-					chunk = w.getChunkAt(x + minX, z + minZ).getChunkSnapshot();
-					xChunkCounter = 0;
-				}
-				
-				int y = getHighestSolidAt(chunk, chunkX, chunkZ);
-				Material m = chunk.getBlockType(chunkX, y, chunkZ);
-				
-				int northChunkX = x + minX - Math.floorDiv(x + minX, 16) * 16; //chunk.getX() just returns 0. :/
-				int northChunkZ = z + minZ - 1 - Math.floorDiv(z + minZ - 1, 16) * 16;
-				int northY = getHighestSolidAt(northChunk, northChunkX, northChunkZ);
-				Material northM = northChunk.getBlockType(northChunkX, northY, northChunkZ);
-				
-				Color mColor = null;
-				
-				try {
-					if(materialIndex.get(m) == 12) { //Water, color is depth dependant
-						if(northM == Material.WATER) {
-							northY = getLowestWaterBlock(northChunk, northChunkX, northChunkZ);
-							if(y - northY > 3) { //Darker color (1st variant)
-								mColor = colorIndex.get(materialIndex.get(m) * 4);
-							} else if(y - northY  <= 3 && y - northY > 1) { //Normal color (2nd variant)
-								mColor = colorIndex.get(materialIndex.get(m) * 4 + 1);
-							} else { //Ligher color (3rd variant aka base color)
-								mColor = colorIndex.get(materialIndex.get(m) * 4 + 2);
-							}		
-						} else {
-							mColor = colorIndex.get(materialIndex.get(m) * 4);
-						}
-					} else { //Other blocks, color depends of the Y value of the block north of it.
-						if(northY > y) { //Darker color (1st variant)
-							mColor = colorIndex.get(materialIndex.get(m) * 4);
-						} else if(northY == y) { //Normal color (2nd variant)
-							mColor = colorIndex.get(materialIndex.get(m) * 4 + 1);
-						} else { //Ligher color (3rd variant aka base color)
-							mColor = colorIndex.get(materialIndex.get(m) * 4 + 2);
-						}	
-					}
-					
-					img.add(mColor.getRed());					
-					img.add(mColor.getGreen());
-					img.add(mColor.getBlue());
-				} catch(NullPointerException e) {
-					plugin.getLogger().warning("Unknown Material: " + m + "\n");
-					e.printStackTrace();
-				}
-				xChunkCounter++;
-			}
-			zChunkCounter++;
-		}
-
-		return img;
-	}
-	*/
 	
 	private JSONArray compressMap(JSONArray img, int compression, int side) {
         JSONArray newImg = new JSONArray();
