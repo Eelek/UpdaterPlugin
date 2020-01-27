@@ -54,7 +54,7 @@ public class UpdaterMain extends JavaPlugin {
 		watchdog = null;
 	}
 
-	public void sendDataToWebserver(String data, String URL) throws IOException {
+	public void sendDataToWebserver(String data, String URL) throws IOException, ConnectException {
 		URL serverURL = new URL(URL + "?API-key=" + getConfig().getString("api-key"));
 		HttpsURLConnection conn = (HttpsURLConnection) serverURL.openConnection();
 
@@ -80,7 +80,7 @@ public class UpdaterMain extends JavaPlugin {
 		conn.disconnect();
 	}
 
-	public String getDataFromWebserver(String URL) throws IOException {
+	public String getDataFromWebserver(String URL) throws IOException, ConnectException {
 		URL serverURL = new URL(URL + "?API-key=" + getConfig().getString("api-key"));
 		HttpsURLConnection conn = (HttpsURLConnection) serverURL.openConnection();
 

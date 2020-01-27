@@ -48,7 +48,7 @@ public class Mapper {
 		};
 		
 		long delaytime = plugin.getConfig().getInt("render-update-time") * 20L;
-		plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, mapper, delaytime, delaytime);
+		plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, mapper, 200, delaytime);
 	};
 	
 	private void loadColors() throws IOException, ParseException {
@@ -193,24 +193,34 @@ public class Mapper {
 		int minX = Math.floorDiv(startX, size) * size;
 		int minZ = Math.floorDiv(startZ, size) * size;
 		
-		ArrayList<ChunkSnapshot> chunks = new ArrayList<ChunkSnapshot>();
-		int totalChunks = (int) Math.ceil((size) * size / (16 * 16)) + size / 16;
+		ArrayList<ChunkSnapshot> cache = new ArrayList<ChunkSnapshot>();
 		
-		for(int c = 0; c < totalChunks; c++) {
-			chunks.add(w.getChunkAt(minX + c * 16, minZ + c * 16 - size).getChunkSnapshot());
-			System.out.println("Chunk loading: " + c + " / " + (totalChunks - 1));
+		for(int nz = 0; nz < (size + 1) / 16; nz++) {
+			for(int nx = 0; nx < size / 16; nx++) {
+				cache.add(w.getChunkAt(minX + nx * 16, minZ - size + nz * 16).getChunkSnapshot());
+				System.out.println("Added chunk");
+			}
 		}
 		
 		for(int c = 0; c < size * size / (16 * 16); c++) {
-			ChunkSnapshot chunk = chunks.get(c + size / 16);
-			ChunkSnapshot north = chunks.get(c);
+			ChunkSnapshot chunk = null;
+			ChunkSnapshot north = null;
+			
+			if(cache.size() <= size / 16) {
+				chunk = cache.get(cache.size() - 1);
+			} else {
+				chunk = cache.get(size / 16);
+			}
 			
 			for(int rz = 0; rz < 16; rz++) {
+				if(rz == 0) {
+					north = cache.get(0);
+				} else if (rz == 1) {
+					north = chunk;
+					cache.remove(0);
+				}
+				
 				for(int rx = 0; rx < 16; rx++) {
-					if(rz > 0) { //TODO: Update chunkloading to only load two rows.
-						northChunk = chunk;
-					}
-
 					int y = getHighestSolidAt(chunk, rx, rz);
 					Material m = chunk.getBlockType(rx, y, rz);
 					int northY = getHighestSolidAt(north, rx, rz);
@@ -222,21 +232,22 @@ public class Mapper {
 					img.add(mColor.getBlue());
 				}
 			}
+			System.out.println("Chunk mapped");
 		}
 		
 		return img;
 	}
 
-	private Color getBlockColor(int mIndex, int dy) {
+	private Color getBlockColor(int mIndex, int dY) {
         if (mIndex == 12) { 										
 			if (dY > 3) 			return 	colorIndex.get(mIndex * 4); 			
-			if (dy > 1 && dy <= 3)	return 	colorIndex.get(mIndex * 4 + 1);
-			return 							colorIndex.get(mIndex * 4 + 2);
-		} 
-		if (dy > 0) 	return colorIndex.get(mIndex * 4);
+			if (dY > 1 && dY <= 3)	return 	colorIndex.get(mIndex * 4 + 1);
+									return 	colorIndex.get(mIndex * 4 + 2);
+		}
+        
+		if (dY > 0) 	return colorIndex.get(mIndex * 4);
 		if (dY == 0) 	return colorIndex.get(mIndex * 4 + 1);
-		
-		return colorIndex.get(mIndex * 4 + 2);
+						return colorIndex.get(mIndex * 4 + 2);
 	}
 	
 	/*
