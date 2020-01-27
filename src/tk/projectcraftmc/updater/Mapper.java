@@ -4,8 +4,8 @@ import java.awt.Color;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
-
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -161,8 +161,7 @@ public class Mapper {
 
 			for(int zpart = 0; zpart < parts; zpart++) {
 				for(int xpart = 0; xpart < parts; xpart++) {
-					JSONArray map = generateMap(plugin.getServer().getWorlds().get(0), x + xpart * plugin.CHUNKSIZE, z + zpart * plugin.CHUNKSIZE, plugin.CHUNKSIZE);
-					data.addAll(map);
+					data.addAll(generateMap(plugin.getServer().getWorlds().get(0), x + xpart * plugin.CHUNKSIZE, z + zpart * plugin.CHUNKSIZE, plugin.CHUNKSIZE));
 				}
 			}
 			
@@ -187,18 +186,18 @@ public class Mapper {
 		System.gc();
 	}
 	
-	private JSONArray generateMap(World w, int startX, int startZ, int size) {
-		JSONArray img = new JSONArray();
+	private ArrayList<Integer> generateMap(World w, int startX, int startZ, int size) {
+		ArrayList<Integer> img = new ArrayList<Integer>(Collections.nCopies(size * size * 3, null));
 		
 		int minX = Math.floorDiv(startX, size) * size;
 		int minZ = Math.floorDiv(startZ, size) * size;
 		
 		ArrayList<ChunkSnapshot> cache = new ArrayList<ChunkSnapshot>();
 		
-		for(int nz = 0; nz < size / 16; nz++) { //TODO: Fix
+		for(int nz = 0; nz < size / 16; nz++) {
 			for(int nx = 0; nx < (size + 16) / 16; nx++) {
-				int zOffset = Math.floorDiv(minZ + nx * 16, 16) * 16;
-				int xOffset = Math.floorDiv(minX - size / 16 + nz * 16, 16) * 16;
+				int xOffset = Math.floorDiv(minX + nx * 16, 16) * 16;
+				int zOffset = Math.floorDiv(minZ - size / 16 + nz * 16, 16) * 16;
 				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot());
 			}
 		}
@@ -228,9 +227,9 @@ public class Mapper {
 					
 					Color mColor = getBlockColor(materialIndex.get(m), y - northY);
 					
-					img.add(mColor.getRed());				
-					img.add(mColor.getGreen());
-					img.add(mColor.getBlue());
+					img.set(c * 16 * 16 + rz * 16 + rx    , mColor.getRed());
+					img.set(c * 16 * 16 + rz * 16 + rx + 1, mColor.getGreen());
+					img.set(c * 16 * 16 + rz * 16 + rx + 2, mColor.getBlue());
 				}
 			}
 			System.out.println("Chunk mapped");
@@ -251,7 +250,7 @@ public class Mapper {
 						return colorIndex.get(mIndex * 4 + 2);
 	}
 	
-	private JSONArray compressMap(JSONArray img, int compression, int side) {
+	private JSONArray compressMap(ArrayList<Integer> img, int compression, int side) {
         JSONArray newImg = new JSONArray();
         int newPixelCount = (img.size() / 3) / (compression * compression);
         int newWidth = (int) Math.floor(Math.sqrt(newPixelCount));
