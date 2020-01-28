@@ -162,6 +162,7 @@ public class Mapper {
 			for(int zpart = 0; zpart < parts; zpart++) {
 				for(int xpart = 0; xpart < parts; xpart++) {
 					data.addAll(generateMap(plugin.getServer().getWorlds().get(0), x + xpart * plugin.CHUNKSIZE, z + zpart * plugin.CHUNKSIZE, plugin.CHUNKSIZE));
+					System.out.println("Created " + (x + xpart * plugin.CHUNKSIZE) + " " + (z + zpart * plugin.CHUNKSIZE));
 				}
 			}
 			
@@ -191,6 +192,7 @@ public class Mapper {
 		
 		int minX = Math.floorDiv(startX, size) * size;
 		int minZ = Math.floorDiv(startZ, size) * size;
+		System.out.println("minX " + minX + " minZ " + minZ);
 		
 		ArrayList<ChunkSnapshot> cache = new ArrayList<ChunkSnapshot>();
 		
@@ -200,8 +202,9 @@ public class Mapper {
 		for(int nz = 0; nz < chunkSides + 1; nz++) {
 			for(int nx = 0; nx < chunkSides; nx++) {
 				int xOffset = Math.floorDiv(minX + nx * 16, 16) * 16;
-				int zOffset = Math.floorDiv(minZ - chunkSides * 16 + nz * 16, 16) * 16;
+				int zOffset = Math.floorDiv(minZ - 16 + nz * 16, 16) * 16;
 				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot());
+				System.out.println("Loaded " + xOffset + ", " + zOffset);
 			}
 		}
 		
@@ -216,8 +219,10 @@ public class Mapper {
 			}
 			
 			for(int rz = 0; rz < 16; rz++) {
+				int northOffset = rz - 1;
 				if(rz == 0) {
 					north = cache.get(0);
+					northOffset = 15;
 				} else if (rz == 1) {
 					north = chunk;
 					cache.remove(0);
@@ -226,11 +231,11 @@ public class Mapper {
 				for(int rx = 0; rx < 16; rx++) {
 					int y = getHighestSolidAt(chunk, rx, rz);
 					Material m = chunk.getBlockType(rx, y, rz);
-					int northY = getHighestSolidAt(north, rx, 15);
+					int northY = getHighestSolidAt(north, rx, northOffset);
 					
 					Color mColor = getBlockColor(materialIndex.get(m), y - northY);
 					
-					int pixelOffset = c * 16 * 16 + rz * 16 + rx;
+					int pixelOffset = 3 * (c * 16 * 16 + rz * 16 + rx);
 					img.set(pixelOffset    , mColor.getRed());
 					img.set(pixelOffset + 1, mColor.getGreen());
 					img.set(pixelOffset + 2, mColor.getBlue());
