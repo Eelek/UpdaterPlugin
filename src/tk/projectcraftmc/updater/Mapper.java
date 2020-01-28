@@ -194,20 +194,23 @@ public class Mapper {
 		
 		ArrayList<ChunkSnapshot> cache = new ArrayList<ChunkSnapshot>();
 		
-		for(int nz = 0; nz < size / 16; nz++) {
-			for(int nx = 0; nx < (size + 16) / 16; nx++) {
+		int totalChunks = size * size / (16 * 16);
+		int chunkSides = size / 16;
+		
+		for(int nz = 0; nz < chunkSides + 1; nz++) {
+			for(int nx = 0; nx < chunkSides; nx++) {
 				int xOffset = Math.floorDiv(minX + nx * 16, 16) * 16;
-				int zOffset = Math.floorDiv(minZ - size / 16 + nz * 16, 16) * 16;
+				int zOffset = Math.floorDiv(minZ - chunkSides * 16 + nz * 16, 16) * 16;
 				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot());
 			}
 		}
 		
-		for(int c = 0; c < size * size / (16 * 16); c++) {
+		for(int c = 0; c < totalChunks; c++) {
 			ChunkSnapshot chunk = null;
 			ChunkSnapshot north = null;
 			
-			if(cache.size() > size / 16) {
-				chunk = cache.get(size / 16);
+			if(cache.size() > chunkSides) {
+				chunk = cache.get(chunkSides);
 			} else {
 				chunk = cache.get(0);
 			}
@@ -227,9 +230,10 @@ public class Mapper {
 					
 					Color mColor = getBlockColor(materialIndex.get(m), y - northY);
 					
-					img.set(c * 16 * 16 + rz * 16 + rx    , mColor.getRed());
-					img.set(c * 16 * 16 + rz * 16 + rx + 1, mColor.getGreen());
-					img.set(c * 16 * 16 + rz * 16 + rx + 2, mColor.getBlue());
+					int pixelOffset = c * 16 * 16 + rz * 16 + rx;
+					img.set(pixelOffset    , mColor.getRed());
+					img.set(pixelOffset + 1, mColor.getGreen());
+					img.set(pixelOffset + 2, mColor.getBlue());
 				}
 			}
 			System.out.println("Chunk mapped");
