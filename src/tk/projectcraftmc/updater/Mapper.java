@@ -161,7 +161,7 @@ public class Mapper {
 
 			for(int zpart = 0; zpart < parts; zpart++) {
 				for(int xpart = 0; xpart < parts; xpart++) {
-					data.addAll(generateMap(plugin.getServer().getWorlds().get(0), x + xpart * plugin.CHUNKSIZE, z + zpart * plugin.CHUNKSIZE, plugin.CHUNKSIZE));
+					data.addAll(generateMap(plugin.getServer().getWorlds().get(0), x + xpart * plugin.CHUNKSIZE, z + zpart * plugin.CHUNKSIZE, sideLength));
 					System.out.println("Created " + (x + xpart * plugin.CHUNKSIZE) + " " + (z + zpart * plugin.CHUNKSIZE));
 				}
 			}
@@ -199,12 +199,12 @@ public class Mapper {
 		int totalChunks = size * size / (16 * 16);
 		int chunkSides = size / 16;
 		
-		for(int nz = 0; nz < chunkSides + 1; nz++) {
+		for(int nz = -1; nz < chunkSides; nz++) {
 			for(int nx = 0; nx < chunkSides; nx++) {
 				int xOffset = Math.floorDiv(minX + nx * 16, 16) * 16;
-				int zOffset = Math.floorDiv(minZ - 16 + nz * 16, 16) * 16;
+				int zOffset = Math.floorDiv(minZ + nz * 16, 16) * 16;
 				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot());
-				System.out.println("Loaded " + xOffset + ", " + zOffset);
+				System.out.println("Loaded " + xOffset / 16 + ", " + zOffset / 16);
 			}
 		}
 		
@@ -221,17 +221,17 @@ public class Mapper {
 			for(int rz = 0; rz < 16; rz++) {
 				int northOffset = rz - 1;
 				if(rz == 0) {
-					north = cache.get(0);
 					northOffset = 15;
+					north = cache.get(0);
 				} else if (rz == 1) {
 					north = chunk;
 					cache.remove(0);
 				}
 				
 				for(int rx = 0; rx < 16; rx++) {
-					int y = getHighestSolidAt(chunk, rx, rz);
+					int y = getHighestSolidAt(chunk, rx, rz, -1, true);
 					Material m = chunk.getBlockType(rx, y, rz);
-					int northY = getHighestSolidAt(north, rx, northOffset);
+					int northY = getHighestSolidAt(north, rx, northOffset, -1, true);
 					
 					Color mColor = getBlockColor(materialIndex.get(m), y - northY);
 					
@@ -290,10 +290,15 @@ public class Mapper {
         return newImg;
     }
 	
-	private int getHighestSolidAt(ChunkSnapshot chunk, int x, int z) {
-		int y = chunk.getHighestBlockYAt(x, z);
+	private int getHighestSolidAt(ChunkSnapshot chunk, int x, int z, int start, boolean skipWater) {
+		int y = 255;
+		if(start == -1) {
+			y = chunk.getHighestBlockYAt(x, z);
+		} else {
+			y = start;
+		}
 		
-		while(materialIndex.get(chunk.getBlockType(x, y, z)) == 0 || materialIndex.get(chunk.getBlockType(x, y, z)) == 12) { //Skip transparent blocks
+		while(materialIndex.get(chunk.getBlockType(x, y, z)) == 0 || (materialIndex.get(chunk.getBlockType(x, y, z)) == 12 && !skipWater) ) { //Skip transparent blocks
 			y--;
 		}
 		
