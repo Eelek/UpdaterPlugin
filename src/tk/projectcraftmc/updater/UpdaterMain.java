@@ -73,7 +73,7 @@ public class UpdaterMain extends JavaPlugin {
 
 		out.close();
 		
-		if(conn.getResponseCode() > 200) {
+		if(conn.getResponseCode() > 226) {
 			throw new ConnectException("Couldn't send data to the webserver. (" + conn.getResponseCode() + " " + conn.getResponseMessage() + ")");
 		}
 

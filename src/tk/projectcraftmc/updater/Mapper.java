@@ -124,7 +124,7 @@ public class Mapper {
 		JSONObject apidata = (JSONObject) parser.parse(plugin.getDataFromWebserver(plugin.getConfig().getString("api-fetch-url")));
 		JSONArray minimaps = (JSONArray) apidata.get("miniMapList");
 		
-		int totalWorkload = apidata.size() + current.size();
+		int totalWorkload = minimaps.size() + current.size();
 		double done = 0.0;
 		
 		if(!current.isEmpty()) {
@@ -153,18 +153,11 @@ public class Mapper {
 		for(int m = 0; m < minimaps.size(); m++) {
 			JSONObject minimapObj = (JSONObject) minimaps.get(m);
 			int sideLength = Integer.parseInt(minimapObj.get("size").toString());
-			int parts = (int) Math.ceil(1.0d * sideLength / plugin.CHUNKSIZE);
 			int x = Integer.parseInt(minimapObj.get("x").toString());
 			int z = Integer.parseInt(minimapObj.get("z").toString());
-			System.out.println("Size: "  + sideLength + " parts: " + parts);
 			JSONArray data = new JSONArray();
 
-			for(int zpart = 0; zpart < parts; zpart++) {
-				for(int xpart = 0; xpart < parts; xpart++) {
-					data.addAll(generateMap(plugin.getServer().getWorlds().get(0), x + xpart * plugin.CHUNKSIZE, z + zpart * plugin.CHUNKSIZE, sideLength));
-					System.out.println("Created " + (x + xpart * plugin.CHUNKSIZE) + " " + (z + zpart * plugin.CHUNKSIZE));
-				}
-			}
+			data.addAll(generateMap(plugin.getServer().getWorlds().get(0), x, z, sideLength));
 			
 			JSONObject metaData = new JSONObject();
 			metaData.put("x", x);
@@ -212,11 +205,7 @@ public class Mapper {
 			ChunkSnapshot chunk = null;
 			ChunkSnapshot north = null;
 			
-			if(cache.size() > chunkSides) {
-				chunk = cache.get(chunkSides);
-			} else {
-				chunk = cache.get(0);
-			}
+			chunk = cache.get(chunkSides);
 			
 			for(int rz = 0; rz < 16; rz++) {
 				int northOffset = rz - 1;
@@ -239,21 +228,22 @@ public class Mapper {
 					img.set(pixelOffset    , mColor.getRed());
 					img.set(pixelOffset + 1, mColor.getGreen());
 					img.set(pixelOffset + 2, mColor.getBlue());
+					//System.out.println("Set " + pixelOffset + " to " + " (" + mColor.getRed() + "," + mColor.getGreen() + "," + mColor.getBlue() + ")");
 				}
 			}
-			System.out.println("Chunk mapped");
+			System.out.println("Chunk mapped " + chunk.getX() + " " + chunk.getZ());
 		}
 		
 		return img;
 	}
 
 	private Color getBlockColor(int mIndex, int dY) {
-        if (mIndex == 12) { 										
-			if (dY > 3) 			return 	colorIndex.get(mIndex * 4); 			
-			if (dY > 1 && dY <= 3)	return 	colorIndex.get(mIndex * 4 + 1);
-									return 	colorIndex.get(mIndex * 4 + 2);
+        if (mIndex == 12) {
+			if (dY > 3) 			return colorIndex.get(mIndex * 4);
+			if (dY > 1 && dY <= 3)	return colorIndex.get(mIndex * 4 + 1);
+									return colorIndex.get(mIndex * 4 + 2);
 		}
-        
+
 		if (dY > 0) 	return colorIndex.get(mIndex * 4);
 		if (dY == 0) 	return colorIndex.get(mIndex * 4 + 1);
 						return colorIndex.get(mIndex * 4 + 2);
