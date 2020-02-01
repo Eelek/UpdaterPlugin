@@ -181,7 +181,7 @@ public class Mapper {
 		System.gc();
 	}
 	
-	private ArrayList<Integer> generateMap(World w, int startX, int startZ, int size) throws IOException {
+	private ArrayList<Integer> generateMap(World w, int startX, int startZ, int size) {
 		ArrayList<Integer> img = new ArrayList<Integer>(Collections.nCopies(size * size * 3, null));
 		
 		int minX = Math.floorDiv(startX, 16) * 16;
@@ -219,7 +219,7 @@ public class Mapper {
 					int m = materialIndex.get(chunk.getBlockType(rx, y, rz));
 					int northY = getHighestSolidAt(north, rx, northOffset, -1, false);
 					
-					Color mColor = getBlockColor(m, y - northY);
+					Color mColor = getBlockColor(m, northY - y);
 					
 					int pixelOffset = 3 * (c * 16 * 16 + rz * 16 + rx);
 					img.set(pixelOffset    , mColor.getRed());
