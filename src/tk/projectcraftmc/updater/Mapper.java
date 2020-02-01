@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -180,7 +181,7 @@ public class Mapper {
 		System.gc();
 	}
 	
-	private ArrayList<Integer> generateMap(World w, int startX, int startZ, int size) {
+	private ArrayList<Integer> generateMap(World w, int startX, int startZ, int size) throws IOException {
 		ArrayList<Integer> img = new ArrayList<Integer>(Collections.nCopies(size * size * 3, null));
 		
 		int minX = Math.floorDiv(startX, 16) * 16;
@@ -193,8 +194,8 @@ public class Mapper {
 		
 		for(int nz = -1; nz < chunkSides; nz++) {
 			for(int nx = 0; nx < chunkSides; nx++) {
-				int xOffset = minX + nx * 16;
-				int zOffset = minZ + nz * 16;
+				int xOffset = Math.floorDiv(minX + nx * 16, 16);
+				int zOffset = Math.floorDiv(minZ + nz * 16, 16);
 				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot());
 			}
 		}
@@ -215,10 +216,10 @@ public class Mapper {
 				
 				for(int rx = 0; rx < 16; rx++) {
 					int y = getHighestSolidAt(chunk, rx, rz, -1, false);
-					Material m = chunk.getBlockType(rx, y, rz);
+					int m = materialIndex.get(chunk.getBlockType(rx, y, rz));
 					int northY = getHighestSolidAt(north, rx, northOffset, -1, false);
 					
-					Color mColor = getBlockColor(materialIndex.get(m), y - northY);
+					Color mColor = getBlockColor(m, y - northY);
 					
 					int pixelOffset = 3 * (c * 16 * 16 + rz * 16 + rx);
 					img.set(pixelOffset    , mColor.getRed());
@@ -226,7 +227,6 @@ public class Mapper {
 					img.set(pixelOffset + 2, mColor.getBlue());
 				}
 			}
-			System.out.println("Chunk mapped " + chunk.getX() + " " + chunk.getZ());
 		}
 		
 		return img;
