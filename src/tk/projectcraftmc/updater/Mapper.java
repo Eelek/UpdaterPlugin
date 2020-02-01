@@ -183,9 +183,8 @@ public class Mapper {
 	private ArrayList<Integer> generateMap(World w, int startX, int startZ, int size) {
 		ArrayList<Integer> img = new ArrayList<Integer>(Collections.nCopies(size * size * 3, null));
 		
-		int minX = Math.floorDiv(startX, size) * size;
-		int minZ = Math.floorDiv(startZ, size) * size;
-		System.out.println("minX " + minX + " minZ " + minZ);
+		int minX = Math.floorDiv(startX, 16) * 16;
+		int minZ = Math.floorDiv(startZ, 16) * 16;
 		
 		ArrayList<ChunkSnapshot> cache = new ArrayList<ChunkSnapshot>();
 		
@@ -194,18 +193,15 @@ public class Mapper {
 		
 		for(int nz = -1; nz < chunkSides; nz++) {
 			for(int nx = 0; nx < chunkSides; nx++) {
-				int xOffset = Math.floorDiv(minX + nx * 16, 16) * 16;
-				int zOffset = Math.floorDiv(minZ + nz * 16, 16) * 16;
+				int xOffset = minX + nx * 16;
+				int zOffset = minZ + nz * 16;
 				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot());
-				System.out.println("Loaded " + xOffset / 16 + ", " + zOffset / 16);
 			}
 		}
 		
 		for(int c = 0; c < totalChunks; c++) {
-			ChunkSnapshot chunk = null;
+			ChunkSnapshot chunk = cache.get(chunkSides);
 			ChunkSnapshot north = null;
-			
-			chunk = cache.get(chunkSides);
 			
 			for(int rz = 0; rz < 16; rz++) {
 				int northOffset = rz - 1;
@@ -218,9 +214,9 @@ public class Mapper {
 				}
 				
 				for(int rx = 0; rx < 16; rx++) {
-					int y = getHighestSolidAt(chunk, rx, rz, -1, true);
+					int y = getHighestSolidAt(chunk, rx, rz, -1, false);
 					Material m = chunk.getBlockType(rx, y, rz);
-					int northY = getHighestSolidAt(north, rx, northOffset, -1, true);
+					int northY = getHighestSolidAt(north, rx, northOffset, -1, false);
 					
 					Color mColor = getBlockColor(materialIndex.get(m), y - northY);
 					
@@ -228,7 +224,6 @@ public class Mapper {
 					img.set(pixelOffset    , mColor.getRed());
 					img.set(pixelOffset + 1, mColor.getGreen());
 					img.set(pixelOffset + 2, mColor.getBlue());
-					//System.out.println("Set " + pixelOffset + " to " + " (" + mColor.getRed() + "," + mColor.getGreen() + "," + mColor.getBlue() + ")");
 				}
 			}
 			System.out.println("Chunk mapped " + chunk.getX() + " " + chunk.getZ());
@@ -280,7 +275,16 @@ public class Mapper {
         return newImg;
     }
 	
-	private int getHighestSolidAt(ChunkSnapshot chunk, int x, int z, int start, boolean skipWater) {
+	/**
+	 * Get the highest solid excluding transparent blocks at the given coordinates.
+	 * @param chunk The chunk that is being scanned.
+	 * @param x The block X coordinate.
+	 * @param z The block Z coordinate.
+	 * @param start A start coordinate, from which to start checking.
+	 * @param waterIsTransparent Count water as transparent blocks.
+	 * @return the Y coordinate of the heightest non-transparent block.
+	 */
+	private int getHighestSolidAt(ChunkSnapshot chunk, int x, int z, int start, boolean waterIsTransparent) {
 		int y = 255;
 		if(start == -1) {
 			y = chunk.getHighestBlockYAt(x, z);
@@ -288,7 +292,7 @@ public class Mapper {
 			y = start;
 		}
 		
-		while(materialIndex.get(chunk.getBlockType(x, y, z)) == 0 || (materialIndex.get(chunk.getBlockType(x, y, z)) == 12 && !skipWater) ) { //Skip transparent blocks
+		while(materialIndex.get(chunk.getBlockType(x, y, z)) == 0 || (materialIndex.get(chunk.getBlockType(x, y, z)) == 12 && waterIsTransparent) ) { //Skip transparent blocks
 			y--;
 		}
 		
