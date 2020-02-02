@@ -124,11 +124,15 @@ public class UpdaterMain extends JavaPlugin {
 	
 	public boolean onCommand(CommandSender sender, Command cmd, String commandlabel, String[] args) {
 		if(cmd.getName().equalsIgnoreCase("updatemap")) {
-			try {
-				mapper.updateMap();
-			} catch (IOException | ParseException e) {
-				e.printStackTrace();
-			}
+			getServer().getScheduler().runTaskAsynchronously(this, new Runnable() {
+				public void run() {
+					try {
+						mapper.updateMap();
+					} catch (IOException | ParseException e) {
+						e.printStackTrace();
+					}
+				}
+			});
 		}
 		
 		if(cmd.getName().equalsIgnoreCase("setcompression")) {

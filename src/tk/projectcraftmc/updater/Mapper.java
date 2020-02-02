@@ -189,8 +189,8 @@ public class Mapper {
 		
 		ArrayList<ChunkSnapshot> cache = new ArrayList<ChunkSnapshot>();
 		
-		int totalChunks = size * size / (16 * 16);
 		int chunkSides = size / 16;
+		int totalChunks = chunkSides * chunkSides;
 		
 		for(int nz = -1; nz < chunkSides; nz++) {
 			for(int nx = 0; nx < chunkSides; nx++) {
@@ -200,8 +200,10 @@ public class Mapper {
 			}
 		}
 		
+		int random = 0;
 		for(int c = 0; c < totalChunks; c++) {
 			ChunkSnapshot chunk = cache.get(chunkSides);
+			System.out.println("C: " + c + " X: " + chunk.getX() + " Z: " + chunk.getZ());
 			ChunkSnapshot north = null;
 			
 			for(int rz = 0; rz < 16; rz++) {
@@ -222,9 +224,14 @@ public class Mapper {
 					Color mColor = getBlockColor(m, northY - y);
 					
 					int pixelOffset = 3 * (c * 16 * 16 + rz * 16 + rx);
-					img.set(pixelOffset    , mColor.getRed());
-					img.set(pixelOffset + 1, mColor.getGreen());
-					img.set(pixelOffset + 2, mColor.getBlue());
+					//img.set(pixelOffset    , mColor.getRed());
+					//img.set(pixelOffset + 1, mColor.getGreen());
+					//img.set(pixelOffset + 2, mColor.getBlue());
+					img.set(pixelOffset    , random % 3 == 0 ? (255 / (16 * 16) * (rz * 16 + rx)) : 0);
+					img.set(pixelOffset + 1, random % 3 == 1 ? (255 / (16 * 16) * (rz * 16 + rx)) : 0);
+					img.set(pixelOffset + 2, random % 3 == 2 ? (255 / (16 * 16) * (rz * 16 + rx)) : 0);
+					//System.out.println("value " + (int) Math.floor(c / totalChunks * 255));
+					random++;
 				}
 			}
 		}
@@ -232,6 +239,12 @@ public class Mapper {
 		return img;
 	}
 
+	/**
+	 * Get the block color based on the height difference of itself with the block above it
+	 * @param mIndex The block's material index.
+	 * @param dY The Y of the block north of it - the block's own Y value.
+	 * @return The color as a Color object.
+	 */
 	private Color getBlockColor(int mIndex, int dY) {
         if (mIndex == 12) {
 			if (dY > 3) 			return colorIndex.get(mIndex * 4);
