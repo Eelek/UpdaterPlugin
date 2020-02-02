@@ -201,9 +201,7 @@ public class Mapper {
 		}
 			
 		for(int c = 0; c < totalChunks; c++) {
-			int random = 0;
 			ChunkSnapshot chunk = cache.get(chunkSides);
-			System.out.println("C: " + c + " X: " + chunk.getX() + " Z: " + chunk.getZ());
 			ChunkSnapshot north = null;
 			
 			for(int rz = 0; rz < 16; rz++) {
@@ -223,19 +221,10 @@ public class Mapper {
 					
 					Color mColor = getBlockColor(m, northY - y);
 					
-					int chunkX = (c + 1) % chunkSides;
-					int chunkZ = Math.floorDiv(c, chunkSides);
-					int xOffset = chunkX * 16 + rx;
-					int zOffset = 16 * 16 * chunkZ * chunkSides;
-					int pixelOffset = xOffset + zOffset + rz * chunkSides * 16;
-					//img.set(pixelOffset    , mColor.getRed());
-					//img.set(pixelOffset + 1, mColor.getGreen());
-					//img.set(pixelOffset + 2, mColor.getBlue());
-					img.set(pixelOffset    , Math.min(random, 255));
-					img.set(pixelOffset + 1, Math.min(Math.max(random - 255, 0), 255));
-					img.set(pixelOffset + 2, Math.min(Math.max(random - 510, 0), 255));
-					//System.out.println("value " + (int) Math.floor(c / totalChunks * 255));
-					random++;
+					int pixelOffset = 3 * ((c % chunkSides) * 16 + rx + (16 * 16 * Math.floorDiv(c, chunkSides) * chunkSides) + rz * chunkSides * 16);
+					img.set(pixelOffset    , mColor.getRed());
+					img.set(pixelOffset + 1, mColor.getGreen());
+					img.set(pixelOffset + 2, mColor.getBlue());
 				}
 			}
 		}
