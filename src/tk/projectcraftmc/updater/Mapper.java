@@ -221,7 +221,10 @@ public class Mapper {
 					
 					Color mColor = getBlockColor(m, northY - y);
 					
-					int pixelOffset = 3 * ((c % chunkSides) * 16 + rx + (16 * 16 * Math.floorDiv(c, chunkSides) * chunkSides) + rz * chunkSides * 16);
+					int xOffset = (c % chunkSides) * 16 + rx;
+					int zOffset = 16 * 16 * Math.floorDiv(c, chunkSides) * chunkSides;
+					int chunkOffset = rz * chunkSides * 16;
+					int pixelOffset = 3 * ( xOffset + zOffset + chunkOffset);
 					img.set(pixelOffset    , mColor.getRed());
 					img.set(pixelOffset + 1, mColor.getGreen());
 					img.set(pixelOffset + 2, mColor.getBlue());
