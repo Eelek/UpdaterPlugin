@@ -15,6 +15,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import net.minecraft.server.v1_15_R1.ReportedException;
+
 @SuppressWarnings("unchecked")
 public class Mapper {
 	
@@ -130,7 +132,7 @@ public class Mapper {
 		
 		if(!current.isEmpty()) {
 	    	for (SuperChunk c : current) {
-				JSONArray data = compressMap(generateMap(c.getWorld(), c.getX(), c.getZ(), plugin.CHUNKSIZE), plugin.COMPRESSION, plugin.CHUNKSIZE);	    		
+				JSONArray data = compressMap(preGenerateMap(c.getWorld(), c.getX(), c.getZ(), plugin.CHUNKSIZE), plugin.COMPRESSION, plugin.CHUNKSIZE);	    		
 				
 				JSONObject metaData = new JSONObject();
 				metaData.put("x", c.getX());
@@ -145,7 +147,7 @@ public class Mapper {
 				
 				plugin.sendDataToWebserver(complete.toJSONString(), plugin.getConfig().getString("api-upload-url"));
 				done++;
-				plugin.getLogger().info("Updating: " + done / totalWorkload * 100 + "%"); 
+				plugin.getLogger().info("Updating: " + Math.round((done / totalWorkload) * 100) + "%");
 			}
 		}
 		
@@ -181,6 +183,22 @@ public class Mapper {
 		System.gc();
 	}
 	
+	private ArrayList<Integer> preGenerateMap(World w, int startX, int startZ, int size) {
+		w.setAutoSave(false);
+		ArrayList<Integer> img = new ArrayList<Integer>();
+		for(int z = 0; z < size; z += 128) {
+			for(int x = 0; x < size; x += 128) {
+				img.addAll(z * 128 + x, generateMap(w, startX + x, startZ + z, 128));
+			}
+		}
+		
+		plugin.getLogger().info("Finalizing...");
+		w.setAutoSave(true);
+		w.save();
+		
+		return img;
+	}
+	
 	private ArrayList<Integer> generateMap(World w, int startX, int startZ, int size) {
 		ArrayList<Integer> img = new ArrayList<Integer>(Collections.nCopies(size * size * 3, null));
 		
@@ -199,37 +217,42 @@ public class Mapper {
 				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot());
 			}
 		}
-			
-		for(int c = 0; c < totalChunks; c++) {
-			ChunkSnapshot chunk = cache.get(chunkSides);
-			ChunkSnapshot north = null;
-			
-			for(int rz = 0; rz < 16; rz++) {
-				int northOffset = rz - 1;
-				if(rz == 0) {
-					northOffset = 15;
-					north = cache.get(0);
-				} else if (rz == 1) {
-					north = chunk;
-					cache.remove(0);
-				}
+
+		try {
+			for(int c = 0; c < totalChunks; c++) {
+				ChunkSnapshot chunk = cache.get(chunkSides);
+				ChunkSnapshot north = null;
 				
-				for(int rx = 0; rx < 16; rx++) {
-					int y = getHighestSolidAt(chunk, rx, rz, -1, false);
-					int m = materialIndex.get(chunk.getBlockType(rx, y, rz));
-					int northY = getHighestSolidAt(north, rx, northOffset, -1, false);
+				for(int rz = 0; rz < 16; rz++) {
+					int northOffset = rz - 1;
+					if(rz == 0) {
+						northOffset = 15;
+						north = cache.get(0);
+					} else if (rz == 1) {
+						north = chunk;
+						cache.remove(0);
+					}
 					
-					Color mColor = getBlockColor(m, northY - y);
-					
-					int xOffset = (c % chunkSides) * 16 + rx;
-					int zOffset = 16 * 16 * Math.floorDiv(c, chunkSides) * chunkSides;
-					int chunkOffset = rz * chunkSides * 16;
-					int pixelOffset = 3 * ( xOffset + zOffset + chunkOffset);
-					img.set(pixelOffset    , mColor.getRed());
-					img.set(pixelOffset + 1, mColor.getGreen());
-					img.set(pixelOffset + 2, mColor.getBlue());
+					for(int rx = 0; rx < 16; rx++) {
+						int y = getHighestSolidAt(chunk, rx, rz, -1, false);
+						int m = materialIndex.get(chunk.getBlockType(rx, y, rz));
+						int northY = getHighestSolidAt(north, rx, northOffset, -1, false);
+						
+						Color mColor = getBlockColor(m, northY - y);
+						
+						int xOffset = (c % chunkSides) * 16 + rx;
+						int zOffset = 16 * 16 * Math.floorDiv(c, chunkSides) * chunkSides;
+						int chunkOffset = rz * chunkSides * 16;
+						int pixelOffset = 3 * ( xOffset + zOffset + chunkOffset);
+						img.set(pixelOffset    , mColor.getRed());
+						img.set(pixelOffset + 1, mColor.getGreen());
+						img.set(pixelOffset + 2, mColor.getBlue());
+					}
 				}
-			}
+			} 
+		} catch (ReportedException e) {
+			plugin.getLogger().warning("Reported Exception");
+			e.printStackTrace();
 		}
 		
 		return img;

@@ -932,7 +932,11 @@
     "materials": [
       "Gold_Block",
       "LIGHT_WEIGHTED_PRESSURE_PLATE",
-      "Bell"
+      "Bell",
+      "beehive",
+      "bee_nest",
+      "honey_block",
+      "honeycomb_block" 
     ]
   },
   {

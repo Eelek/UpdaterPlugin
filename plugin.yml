@@ -12,3 +12,5 @@ commands:
     description: dev
   clearcache:
     description: dev
+  loadmap:
+    description: dev

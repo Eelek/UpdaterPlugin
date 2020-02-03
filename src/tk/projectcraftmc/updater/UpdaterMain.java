@@ -46,6 +46,7 @@ public class UpdaterMain extends JavaPlugin {
 		watchdog = new Watchdog(this);
 
 		getServer().getPluginManager().registerEvents(watchdog, this);
+		getLogger().info(getServer().getWorlds().get(0).getUID().toString());
 	}
 
 	public void onDisable() {
@@ -147,6 +148,22 @@ public class UpdaterMain extends JavaPlugin {
 				e.printStackTrace();
 			}
 			sender.sendMessage("cleared cache");
+		}
+		
+		if(cmd.getName().equalsIgnoreCase("loadmap")) {
+			if(args.length == 4) {
+				int startX = Integer.parseInt(args[0]);
+				int startZ = Integer.parseInt(args[1]);
+				int endX = Integer.parseInt(args[2]);
+				int endZ = Integer.parseInt(args[3]);
+				
+				for(int z = startZ; z < endZ; z += 128) {
+					for(int x = startX; x < endX; x += 128) {
+						watchdog.registerChunk(getServer().getWorlds().get(0), x, z);
+					}
+				}
+				sender.sendMessage("registered");
+			}
 		}
 		
 		return false;

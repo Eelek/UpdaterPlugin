@@ -32,6 +32,7 @@ public class Watchdog implements Listener {
 			
 			@Override
 			public void run() {
+				if(plugin.updating) return;
 				try {
 					saveChunkCache();
 				} catch(Exception e) {
@@ -59,6 +60,15 @@ public class Watchdog implements Listener {
 		SuperChunk c = getSuperChunk(b.getWorld(), b.getX(), b.getZ());
 		if (!containsSuperChunk(chunks, c)) {
 			chunks.add(c);
+			System.out.println("Registered " + c.getX() + " " + c.getZ());
+		}
+	}
+	
+	public void registerChunk(World w, int x, int z) {
+		SuperChunk c = getSuperChunk(w, x, z);
+		if (!containsSuperChunk(chunks, c)) {
+			chunks.add(c);
+			System.out.println("Registered " + c.getX() + " " + c.getZ());
 		}
 	}
 	
