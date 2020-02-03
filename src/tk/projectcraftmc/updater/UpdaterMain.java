@@ -46,7 +46,6 @@ public class UpdaterMain extends JavaPlugin {
 		watchdog = new Watchdog(this);
 
 		getServer().getPluginManager().registerEvents(watchdog, this);
-		getLogger().info(getServer().getWorlds().get(0).getUID().toString());
 	}
 
 	public void onDisable() {
