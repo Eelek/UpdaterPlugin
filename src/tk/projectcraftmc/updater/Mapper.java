@@ -144,6 +144,7 @@ public class Mapper {
 				complete.put("metaData", metaData);
 				
 				plugin.sendDataToWebserver(complete.toJSONString(), plugin.getConfig().getString("api-upload-url"));
+				
 				done++;
 				plugin.getLogger().info("Updating: " + Math.round((done / totalWorkload) * 100) + "%");
 			}
@@ -151,6 +152,7 @@ public class Mapper {
 		
 		plugin.watchdog.clearChunkCache();
 		
+		plugin.getServer().getWorlds().get(0).setAutoSave(false);
 		for(int m = 0; m < minimaps.size(); m++) {
 			JSONObject minimapObj = (JSONObject) minimaps.get(m);
 			int sideLength = Integer.parseInt(minimapObj.get("size").toString());
@@ -175,6 +177,7 @@ public class Mapper {
 			done++;
 			plugin.getLogger().info("Updating: " + Math.round((done / totalWorkload) * 100) + "%");
 		}
+		plugin.getServer().getWorlds().get(0).setAutoSave(false);
 		
 		plugin.getServer().broadcastMessage("Map updated.");
 		plugin.updating = false;
@@ -190,9 +193,7 @@ public class Mapper {
 			}
 		}
 		
-		plugin.getLogger().info("Finalizing...");
 		w.setAutoSave(true);
-		w.save();
 		
 		return img;
 	}
@@ -231,9 +232,9 @@ public class Mapper {
 				}
 				
 				for(int rx = 0; rx < 16; rx++) {
-					int y = getHighestSolidAt(chunk, rx, rz, -1, false);
+					int y = getHighestSolidAt(chunk, rx, rz, -1, true);
 					int m = materialIndex.get(chunk.getBlockType(rx, y, rz));
-					int northY = getHighestSolidAt(north, rx, northOffset, -1, false);
+					int northY = getHighestSolidAt(north, rx, northOffset, -1, true);
 					
 					Color mColor = getBlockColor(m, northY - y);
 					
@@ -259,8 +260,8 @@ public class Mapper {
 	 */
 	private Color getBlockColor(int mIndex, int dY) {
         if (mIndex == 12) {
-			if (dY > 3) 			return colorIndex.get(mIndex * 4);
-			if (dY > 1 && dY <= 3)	return colorIndex.get(mIndex * 4 + 1);
+			if (dY > 4) 			return colorIndex.get(mIndex * 4);
+			if (dY > -4 && dY <= 4)	return colorIndex.get(mIndex * 4 + 1);
 									return colorIndex.get(mIndex * 4 + 2);
 		}
 
@@ -321,6 +322,6 @@ public class Mapper {
 			y--;
 		}
 		
-		return y;
+		return (materialIndex.get(chunk.getBlockType(x, y + 1, z)) == 12 && waterIsTransparent) ? y + 1 : y;
 	}
 }
