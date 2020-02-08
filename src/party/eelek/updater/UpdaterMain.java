@@ -26,6 +26,7 @@ public class UpdaterMain extends JavaPlugin {
 	int CHUNKSIZE;
 	
 	boolean updating = false;
+	boolean debugLogging = false;
 
 	@Override
 	public void onEnable() {
@@ -46,6 +47,8 @@ public class UpdaterMain extends JavaPlugin {
 		watchdog = new Watchdog(this);
 
 		getServer().getPluginManager().registerEvents(watchdog, this);
+		
+		debugLogging = getConfig().getBoolean("logging");
 	}
 
 	public void onDisable() {

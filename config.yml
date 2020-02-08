@@ -14,3 +14,6 @@ render-update-time: 86400
 #  The plugin saves edited chunks in memory, and this can fill up memory.
 #  Cleaning the memory is essentially moving edited chunks to the chunkCache.json
 memory-clean-update-time: 3600
+
+#Enable verbose (detailed) logging. (Use true or false)
+logging: false

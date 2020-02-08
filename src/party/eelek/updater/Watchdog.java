@@ -19,6 +19,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import net.md_5.bungee.api.ChatColor;
+
 public class Watchdog implements Listener {
 	
 	private UpdaterMain plugin;
@@ -60,6 +62,7 @@ public class Watchdog implements Listener {
 		SuperChunk c = getSuperChunk(b.getWorld(), b.getX(), b.getZ());
 		if (!containsSuperChunk(chunks, c)) {
 			chunks.add(c);
+			if(plugin.debugLogging) plugin.getLogger().info("Registered (" + c.getX() + ", " + c.getZ() + ").");
 		}
 	}
 	
@@ -67,6 +70,7 @@ public class Watchdog implements Listener {
 		SuperChunk c = getSuperChunk(w, x, z);
 		if (!containsSuperChunk(chunks, c)) {
 			chunks.add(c);
+			if(plugin.debugLogging) plugin.getLogger().info("Registered (" + c.getX() + ", " + c.getZ() + ").");
 		}
 	}
 	
@@ -93,7 +97,7 @@ public class Watchdog implements Listener {
 	public void saveChunkCache() throws IOException, ParseException {
 		if(chunks.isEmpty()) return;
 		
-		plugin.getServer().broadcastMessage("Writing memory to file. This may be laggy.");
+		plugin.getServer().broadcastMessage("" + ChatColor.DARK_BLUE + ChatColor.BOLD + "[Map Updater]" + ChatColor.RED + "Writing memory to file. This may be laggy.");
 
 		JSONArray cacheJSON = getChunkCache();
 		ArrayList<SuperChunk> copy = chunks;
@@ -112,7 +116,7 @@ public class Watchdog implements Listener {
 		
 		System.gc();
 		
-		plugin.getServer().broadcastMessage("Memory clear complete.");
+		plugin.getServer().broadcastMessage("" + ChatColor.DARK_BLUE + ChatColor.BOLD + "[Map Updater]" + ChatColor.GREEN + "Memory clear complete.");
 	}
 	
 	public void clearChunkCache() throws IOException {

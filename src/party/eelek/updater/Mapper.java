@@ -15,6 +15,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import net.md_5.bungee.api.ChatColor;
+
 @SuppressWarnings("unchecked")
 public class Mapper {
 	
@@ -115,7 +117,7 @@ public class Mapper {
 	}
 	
 	public void updateMap() throws IOException, ParseException {
-		plugin.getServer().broadcastMessage("Updating map, this may be laggy.");
+		plugin.getServer().broadcastMessage("" + ChatColor.DARK_BLUE + ChatColor.BOLD + "[Map Updater] " + ChatColor.RED + "Updating map, this may be laggy.");
 		
 		plugin.updating = true;
 		
@@ -146,7 +148,7 @@ public class Mapper {
 				plugin.sendDataToWebserver(complete.toJSONString(), plugin.getConfig().getString("api-upload-url"));
 				
 				done++;
-				plugin.getLogger().info("Updating: " + Math.round((done / totalWorkload) * 100) + "%");
+				if(plugin.debugLogging) plugin.getLogger().info("Updating: " + Math.round((done / totalWorkload) * 100) + "%");
 			}
 		}
 		
@@ -175,11 +177,11 @@ public class Mapper {
 			
 			plugin.sendDataToWebserver(complete.toJSONString(), plugin.getConfig().getString("api-upload-url"));
 			done++;
-			plugin.getLogger().info("Updating: " + Math.round((done / totalWorkload) * 100) + "%");
+			if(plugin.debugLogging) plugin.getLogger().info("Updating: " + Math.round((done / totalWorkload) * 100) + "%");
 		}
 		plugin.getServer().getWorlds().get(0).setAutoSave(false);
 		
-		plugin.getServer().broadcastMessage("Map updated.");
+		plugin.getServer().broadcastMessage("" + ChatColor.DARK_BLUE + ChatColor.BOLD + "[Map Updater]" + ChatColor.GREEN + "Map updated.");
 		plugin.updating = false;
 		System.gc();
 	}
