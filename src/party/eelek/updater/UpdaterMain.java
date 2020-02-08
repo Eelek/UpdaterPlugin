@@ -1,4 +1,4 @@
-package tk.projectcraftmc.updater;
+package party.eelek.updater;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -135,20 +135,6 @@ public class UpdaterMain extends JavaPlugin {
 			});
 		}
 		
-		if(cmd.getName().equalsIgnoreCase("setcompression")) {
-			this.COMPRESSION = (int) Math.pow(2, Integer.parseInt(args[0]) - 1);
-			sender.sendMessage("done");
-		}
-		
-		if(cmd.getName().equalsIgnoreCase("clearcache")) {
-			try {
-				watchdog.clearChunkCache();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			sender.sendMessage("cleared cache");
-		}
-		
 		if(cmd.getName().equalsIgnoreCase("loadmap")) {
 			if(args.length == 4) {
 				int startX = Integer.parseInt(args[0]);
@@ -156,12 +142,27 @@ public class UpdaterMain extends JavaPlugin {
 				int endX = Integer.parseInt(args[2]);
 				int endZ = Integer.parseInt(args[3]);
 				
+				if(endX > startX) {
+					int tmp = endX;
+					endX = startX;
+					startX = tmp;
+				}
+				
+				if(endZ > startZ) {
+					int tmp = endZ;
+					endZ = startZ;
+					startZ = tmp;
+				}
+				
 				for(int z = startZ; z < endZ; z += 128) {
 					for(int x = startX; x < endX; x += 128) {
 						watchdog.registerChunk(getServer().getWorlds().get(0), x, z);
 					}
 				}
-				sender.sendMessage("registered");
+				
+				sender.sendMessage("Registered (" + startX + ", " + startZ + ") to (" + endX + ", " + endZ + ").");
+			} else {
+				sender.sendMessage("Use /loadmap <startX> <startZ> <endX> <endZ>.");
 			}
 		}
 		

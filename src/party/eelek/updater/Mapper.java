@@ -1,4 +1,4 @@
-package tk.projectcraftmc.updater;
+package party.eelek.updater;
 
 import java.awt.Color;
 import java.io.FileReader;

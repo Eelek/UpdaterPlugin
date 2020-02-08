@@ -1,4 +1,4 @@
-package tk.projectcraftmc.updater;
+package party.eelek.updater;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -60,7 +60,6 @@ public class Watchdog implements Listener {
 		SuperChunk c = getSuperChunk(b.getWorld(), b.getX(), b.getZ());
 		if (!containsSuperChunk(chunks, c)) {
 			chunks.add(c);
-			System.out.println("Registered " + c.getX() + " " + c.getZ());
 		}
 	}
 	
@@ -68,7 +67,6 @@ public class Watchdog implements Listener {
 		SuperChunk c = getSuperChunk(w, x, z);
 		if (!containsSuperChunk(chunks, c)) {
 			chunks.add(c);
-			System.out.println("Registered " + c.getX() + " " + c.getZ());
 		}
 	}
 	
