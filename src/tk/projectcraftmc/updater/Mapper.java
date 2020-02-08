@@ -49,7 +49,7 @@ public class Mapper {
 		};
 		
 		long delaytime = plugin.getConfig().getInt("render-update-time") * 20L;
-		plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, mapper, 200, delaytime);
+		plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, mapper, delaytime, delaytime);
 	};
 	
 	private void loadColors() throws IOException, ParseException {
@@ -236,7 +236,12 @@ public class Mapper {
 					int m = materialIndex.get(chunk.getBlockType(rx, y, rz));
 					int northY = getHighestSolidAt(north, rx, northOffset, -1, true);
 					
-					Color mColor = getBlockColor(m, northY - y);
+					Color mColor = null;
+					if(m == 12) {
+						mColor = getBlockColor(m, 62 - y);
+					} else {
+						mColor = getBlockColor(m, northY - y);
+					}
 					
 					int xOffset = (c % chunkSides) * 16 + rx;
 					int zOffset = 16 * 16 * Math.floorDiv(c, chunkSides) * chunkSides;
@@ -260,8 +265,8 @@ public class Mapper {
 	 */
 	private Color getBlockColor(int mIndex, int dY) {
         if (mIndex == 12) {
-			if (dY > 4) 			return colorIndex.get(mIndex * 4);
-			if (dY > -4 && dY <= 4)	return colorIndex.get(mIndex * 4 + 1);
+			if (dY > 10) 			return colorIndex.get(mIndex * 4);
+			if (dY <= 10 && dY > 5)	return colorIndex.get(mIndex * 4 + 1);
 									return colorIndex.get(mIndex * 4 + 2);
 		}
 
