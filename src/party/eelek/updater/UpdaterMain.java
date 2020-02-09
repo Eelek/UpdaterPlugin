@@ -22,7 +22,6 @@ public class UpdaterMain extends JavaPlugin {
 	Mapper mapper;
 	Watchdog watchdog;
 	
-	int COMPRESSION;
 	int CHUNKSIZE;
 	
 	boolean updating = false;
@@ -125,7 +124,6 @@ public class UpdaterMain extends JavaPlugin {
 			
 			JSONObject apidata = (JSONObject) parser.parse(getDataFromWebserver(getConfig().getString("api-fetch-url")));
 			
-			COMPRESSION = (int) Math.pow(2, Integer.parseInt(apidata.get("compression").toString()) - 1);
 			CHUNKSIZE = Integer.parseInt(apidata.get("chunkSize").toString());
 		} catch (ParseException | IOException e) {
 			getLogger().severe("An error occured whilst initiating the Mapper.");

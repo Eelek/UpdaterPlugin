@@ -132,7 +132,8 @@ public class Mapper {
 		
 		if(!current.isEmpty()) {
 	    	for (SuperChunk c : current) {
-				JSONArray data = compressMap(preGenerateMap(c.getWorld(), c.getX(), c.getZ(), plugin.CHUNKSIZE), plugin.COMPRESSION, plugin.CHUNKSIZE);	    		
+				JSONArray data = new JSONArray();
+				data.addAll(preGenerateMap(c.getWorld(), c.getX(), c.getZ(), plugin.CHUNKSIZE));	    		
 				
 				JSONObject metaData = new JSONObject();
 				metaData.put("x", c.getX());
@@ -277,38 +278,7 @@ public class Mapper {
 		if (dY == 0) 	return colorIndex.get(mIndex * 4 + 1);
 						return colorIndex.get(mIndex * 4 + 2);
 	}
-	
-	private JSONArray compressMap(ArrayList<Integer> img, int compression, int side) {
-        JSONArray newImg = new JSONArray();
-        int newPixelCount = (img.size() / 3) / (compression * compression);
-        int newWidth = (int) Math.floor(Math.sqrt(newPixelCount));
-
-        for(int pixel = 0; pixel < newPixelCount; pixel++) {
-            int red = 0;
-            int green = 0;
-            int blue = 0;
-            
-            for (int rz = 0; rz < compression; rz++) {
-                for (int rx = 0; rx < compression; rx++) {
-                    int curPixelY = Math.floorDiv(pixel, newWidth);
-                    int curPixelX = pixel - curPixelY * newWidth;
-                    int yOffset   = curPixelY * compression * side;
-                    int curIndex  = 3 * (rx + rz * side + curPixelX * compression + yOffset);
-
-                    red   += Integer.parseInt(img.get(curIndex).toString());
-                    green += Integer.parseInt(img.get(curIndex + 1).toString());
-                    blue  += Integer.parseInt(img.get(curIndex + 2).toString());
-                }
-            }
-            
-            newImg.add(Math.floorDiv(red, compression * compression));
-            newImg.add(Math.floorDiv(green, compression * compression));
-            newImg.add(Math.floorDiv(blue, compression * compression));
-        }
-        
-        return newImg;
-    }
-	
+		
 	/**
 	 * Get the highest solid excluding transparent blocks at the given coordinates.
 	 * @param chunk The chunk that is being scanned.
