@@ -202,14 +202,15 @@ public class Mapper {
 	}
 	
 	private ArrayList<Integer> generateMap(World w, int startX, int startZ, int size) {
-		ArrayList<Integer> img = new ArrayList<Integer>(Collections.nCopies(size * size * 3, null));
+		int arraySize = (int) (Math.ceil(size / 16) * 16);
+		ArrayList<Integer> img = new ArrayList<Integer>(Collections.nCopies(arraySize * arraySize * 3, null));
 		
 		int minX = Math.floorDiv(startX, 16) * 16;
 		int minZ = Math.floorDiv(startZ, 16) * 16;
 		
 		ArrayList<ChunkSnapshot> cache = new ArrayList<ChunkSnapshot>();
 		
-		int chunkSides = size / 16;
+		int chunkSides = (int) Math.ceil(size / 16);
 		int totalChunks = chunkSides * chunkSides;
 		
 		for(int nz = -1; nz < chunkSides; nz++) {
