@@ -181,7 +181,7 @@ public class Mapper {
 		}
 		plugin.getServer().getWorlds().get(0).setAutoSave(false);
 		
-		plugin.getServer().broadcastMessage("" + ChatColor.DARK_BLUE + ChatColor.BOLD + "[Map Updater]" + ChatColor.GREEN + "Map updated.");
+		plugin.getServer().broadcastMessage("" + ChatColor.DARK_BLUE + ChatColor.BOLD + "[Map Updater]" + ChatColor.GREEN + " Map updated.");
 		plugin.updating = false;
 		System.gc();
 	}
@@ -236,14 +236,15 @@ public class Mapper {
 				for(int rx = 0; rx < 16; rx++) {
 					int y = getHighestSolidAt(chunk, rx, rz, -1, true);
 					int m = materialIndex.get(chunk.getBlockType(rx, y, rz));
-					int northY = getHighestSolidAt(north, rx, northOffset, -1, true);
+					int northY = 0;
 					
-					Color mColor = null;
-					if(m == 12) {
-						mColor = getBlockColor(m, 62 - y);
+					if(m == 12) { //Water: the water color is depth dependant, not dependant of the block north of it.
+						northY = getHighestSolidAt(chunk, rx, rz, -1, false);
 					} else {
-						mColor = getBlockColor(m, northY - y);
+						northY = getHighestSolidAt(north, rx, northOffset, -1, true);
 					}
+					
+					Color mColor = getBlockColor(m, northY - y);
 					
 					int xOffset = (c % chunkSides) * 16 + rx;
 					int zOffset = 16 * 16 * Math.floorDiv(c, chunkSides) * chunkSides;
@@ -267,8 +268,8 @@ public class Mapper {
 	 */
 	private Color getBlockColor(int mIndex, int dY) {
         if (mIndex == 12) {
-			if (dY > 10) 			return colorIndex.get(mIndex * 4);
-			if (dY <= 10 && dY > 5)	return colorIndex.get(mIndex * 4 + 1);
+			if (dY > 4) 			return colorIndex.get(mIndex * 4);
+			if (dY <= 4 && dY > 2)	return colorIndex.get(mIndex * 4 + 1);
 									return colorIndex.get(mIndex * 4 + 2);
 		}
 

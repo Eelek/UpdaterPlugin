@@ -53,6 +53,14 @@ public class UpdaterMain extends JavaPlugin {
 
 	public void onDisable() {
 		getServer().getScheduler().cancelTasks(this);
+		
+		try {
+			watchdog.saveChunkCache();
+		} catch (IOException | ParseException e) {
+			e.printStackTrace();
+			getLogger().severe("There was an error whilst saving the chunk cache.");
+		}
+		
 		mapper = null;
 		watchdog = null;
 	}
@@ -136,6 +144,7 @@ public class UpdaterMain extends JavaPlugin {
 					}
 				}
 			});
+			return true;
 		}
 		
 		if(cmd.getName().equalsIgnoreCase("loadmap")) {
@@ -145,13 +154,13 @@ public class UpdaterMain extends JavaPlugin {
 				int endX = Integer.parseInt(args[2]);
 				int endZ = Integer.parseInt(args[3]);
 				
-				if(endX > startX) {
+				if(startX > endX) {
 					int tmp = endX;
 					endX = startX;
 					startX = tmp;
 				}
 				
-				if(endZ > startZ) {
+				if(startZ > endZ) {
 					int tmp = endZ;
 					endZ = startZ;
 					startZ = tmp;
@@ -164,8 +173,10 @@ public class UpdaterMain extends JavaPlugin {
 				}
 				
 				sender.sendMessage("Registered (" + startX + ", " + startZ + ") to (" + endX + ", " + endZ + ").");
+				return true;
 			} else {
 				sender.sendMessage("Use /loadmap <startX> <startZ> <endX> <endZ>.");
+				return true;
 			}
 		}
 		
