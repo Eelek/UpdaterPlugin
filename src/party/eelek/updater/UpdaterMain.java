@@ -166,8 +166,8 @@ public class UpdaterMain extends JavaPlugin {
 				
 				startX = Math.floorDiv(startX, CHUNKSIZE) * CHUNKSIZE;
 				startZ = Math.floorDiv(startZ, CHUNKSIZE) * CHUNKSIZE;
-				endX = (int) (Math.ceil(endX /  CHUNKSIZE) * CHUNKSIZE);
-				endZ = (int) (Math.ceil(endZ / CHUNKSIZE) * CHUNKSIZE);
+				endX = (int) (Math.ceil(endX * 1.0d / CHUNKSIZE) * CHUNKSIZE);
+				endZ = (int) (Math.ceil(endZ * 1.0d / CHUNKSIZE) * CHUNKSIZE);
 				
 				for(int z = startZ; z < endZ; z += CHUNKSIZE) {
 					for(int x = startX; x < endX; x += CHUNKSIZE) {
