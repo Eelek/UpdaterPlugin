@@ -14,3 +14,7 @@ commands:
     description: Load an area to be updated.
     usage: /loadmap <startX> <startZ> <endX> <endZ>
     aliases: [lm]
+  clearcache:
+    description: Clear the chunk cache.
+    usage: /clearcache
+    aliases: [cc]

@@ -126,7 +126,7 @@ public class Mapper {
 		JSONArray minimaps = (JSONArray) apidata.get("miniMapList");
 		
 		if(!current.isEmpty()) {
-			plugin.getServer().broadcastMessage("" + ChatColor.DARK_BLUE + ChatColor.BOLD + "[Map Updater] " + ChatColor.RED + "Updating map, this may be laggy.");
+			plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.RED + "Updating map, this may be laggy.");
 			
 			int totalWorkload = minimaps.size() + current.size();
 			double done = 0.0;
@@ -181,7 +181,7 @@ public class Mapper {
 			}
 			plugin.getServer().getWorlds().get(0).setAutoSave(false);
 			
-			plugin.getServer().broadcastMessage("" + ChatColor.DARK_BLUE + ChatColor.BOLD + "[Map Updater]" + ChatColor.GREEN + " Map updated.");
+			plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.GREEN + "Map updated.");
 		}
 		
 		plugin.updating = false;

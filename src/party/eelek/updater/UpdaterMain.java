@@ -17,6 +17,8 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import net.md_5.bungee.api.ChatColor;
+
 public class UpdaterMain extends JavaPlugin {
 	
 	Mapper mapper;
@@ -26,6 +28,8 @@ public class UpdaterMain extends JavaPlugin {
 	
 	boolean updating = false;
 	boolean debugLogging = false;
+	
+	final String PREFIX = "" + ChatColor.DARK_BLUE + ChatColor.BOLD + "[Map Updater] ";
 
 	@Override
 	public void onEnable() {
@@ -145,6 +149,15 @@ public class UpdaterMain extends JavaPlugin {
 			return true;
 		}
 		
+		if(cmd.getName().equalsIgnoreCase("clearcache")) {
+			try {
+				watchdog.clearChunkCache();
+				sender.sendMessage(PREFIX + ChatColor.GREEN + "Cleared the chunk cache.");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
 		if(cmd.getName().equalsIgnoreCase("loadmap")) {
 			if(args.length == 4) {
 				int startX = Integer.parseInt(args[0]);
@@ -175,10 +188,10 @@ public class UpdaterMain extends JavaPlugin {
 					}
 				}
 				
-				sender.sendMessage("Registered (" + startX + ", " + startZ + ") to (" + endX + ", " + endZ + ").");
+				sender.sendMessage(PREFIX + ChatColor.GREEN + "Registered (" + startX + ", " + startZ + ") to (" + endX + ", " + endZ + ").");
 				return true;
 			} else {
-				sender.sendMessage("Use /loadmap <startX> <startZ> <endX> <endZ>.");
+				sender.sendMessage(PREFIX + ChatColor.RED + "Use /loadmap <startX> <startZ> <endX> <endZ>.");
 				return true;
 			}
 		}
