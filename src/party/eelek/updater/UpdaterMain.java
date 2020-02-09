@@ -140,7 +140,7 @@ public class UpdaterMain extends JavaPlugin {
 			getServer().getScheduler().runTaskAsynchronously(this, new Runnable() {
 				public void run() {
 					try {
-						mapper.updateMap();
+						mapper.updateMap(true);
 					} catch (IOException | ParseException e) {
 						e.printStackTrace();
 					}

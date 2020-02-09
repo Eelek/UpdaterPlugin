@@ -42,7 +42,7 @@ public class Mapper {
 			public void run() {
 				if(plugin.updating) return;
 				try {
-					updateMap();
+					updateMap(false);
 				} catch(Exception e) {
 					plugin.getLogger().severe("An error occured whilst updating the map.");
 					e.printStackTrace();
@@ -116,7 +116,7 @@ public class Mapper {
 		}
 	}
 	
-	public void updateMap() throws IOException, ParseException {
+	public void updateMap(boolean force) throws IOException, ParseException {
 		plugin.updating = true;
 		
 		JSONParser parser = new JSONParser();
@@ -125,7 +125,7 @@ public class Mapper {
 		JSONObject apidata = (JSONObject) parser.parse(plugin.getDataFromWebserver(plugin.getConfig().getString("api-fetch-url")));
 		JSONArray minimaps = (JSONArray) apidata.get("miniMapList");
 		
-		if(!current.isEmpty()) {
+		if(!current.isEmpty() || force) {
 			plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.RED + "Updating map, this may be laggy.");
 			
 			int totalWorkload = minimaps.size() + current.size();
