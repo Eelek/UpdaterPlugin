@@ -164,8 +164,13 @@ public class UpdaterMain extends JavaPlugin {
 					startZ = tmp;
 				}
 				
-				for(int z = startZ; z < endZ; z += 128) {
-					for(int x = startX; x < endX; x += 128) {
+				startX = Math.floorDiv(startX, CHUNKSIZE) * CHUNKSIZE;
+				startZ = Math.floorDiv(startZ, CHUNKSIZE) * CHUNKSIZE;
+				endX = Math.floorDiv(endX, CHUNKSIZE) * CHUNKSIZE;
+				endZ = Math.floorDiv(endZ, CHUNKSIZE) * CHUNKSIZE;
+				
+				for(int z = startZ; z < endZ; z += CHUNKSIZE) {
+					for(int x = startX; x < endX; x += CHUNKSIZE) {
 						watchdog.registerChunk(getServer().getWorlds().get(0), x, z);
 					}
 				}
