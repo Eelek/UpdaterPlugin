@@ -14,6 +14,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.scheduler.BukkitTask;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -26,6 +27,7 @@ public class Watchdog implements Listener {
 	private UpdaterMain plugin;
 	private ArrayList<SuperChunk> chunks;
 	private Runnable watchdog;
+	private BukkitTask watchdogTask;
 	
 	public Watchdog(UpdaterMain instance) {
 		this.plugin = instance;
@@ -40,12 +42,18 @@ public class Watchdog implements Listener {
 				} catch(Exception e) {
 					plugin.getLogger().severe("An error occured whilst trying to update chunk cache.");
 					e.printStackTrace();
+					startWatchdog();
 				}
 			}
 		};
 		
+		startWatchdog();
+	}
+	
+	private void startWatchdog() {
+		if(watchdogTask != null) watchdogTask.cancel();
 		long delaytime = plugin.getConfig().getInt("memory-clean-update-time") * 20L;
-		plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, watchdog, delaytime / 2L, delaytime);
+		watchdogTask = plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, watchdog, delaytime / 2L, delaytime);
 	}
 	
 	@EventHandler (priority = EventPriority.MONITOR)

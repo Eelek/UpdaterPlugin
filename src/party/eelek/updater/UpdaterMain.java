@@ -87,7 +87,7 @@ public class UpdaterMain extends JavaPlugin {
 
 		out.close();
 		
-		if(conn.getResponseCode() > 226) {
+		if(conn.getResponseCode() >= HttpsURLConnection.HTTP_BAD_REQUEST) {
 			throw new ConnectException("Couldn't send data to the webserver. (" + conn.getResponseCode() + " " + conn.getResponseMessage() + ")");
 		}
 
@@ -103,7 +103,7 @@ public class UpdaterMain extends JavaPlugin {
 		conn.setDoInput(true);
 		conn.setDoOutput(true);
 
-		if (conn.getResponseCode() > 200) {
+		if (conn.getResponseCode() >= HttpsURLConnection.HTTP_BAD_REQUEST) {
 			throw new ConnectException("Couldn't get data from the webserver. (" + conn.getResponseCode() + " " + conn.getResponseMessage() + ")");
 		}
 
