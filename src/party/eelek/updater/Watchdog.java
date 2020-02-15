@@ -134,7 +134,7 @@ public class Watchdog implements Listener {
 	public void saveChunkCache() throws IOException, ParseException {
 		if(chunks.isEmpty()) return;
 		
-		plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.RED + "Writing memory to file. This may be laggy.");
+		if(plugin.broadcast) plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.RED + "Writing memory to file. This may be laggy.");
 
 		JSONArray cacheJSON = getChunkCache();
 		ArrayList<SuperChunk> copy = chunks;
@@ -153,7 +153,7 @@ public class Watchdog implements Listener {
 		
 		System.gc();
 		
-		plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.GREEN + "Memory clear complete.");
+		if(plugin.broadcast) plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.GREEN + "Memory clear complete.");
 	}
 	
 	/**

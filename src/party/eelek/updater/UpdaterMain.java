@@ -28,6 +28,7 @@ public class UpdaterMain extends JavaPlugin {
 	
 	boolean updating = false;
 	boolean debugLogging = false;
+	boolean broadcast = true;
 	
 	final String PREFIX = "" + ChatColor.DARK_BLUE + ChatColor.BOLD + "[Map Updater] ";
 
@@ -52,6 +53,7 @@ public class UpdaterMain extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(watchdog, this);
 		
 		debugLogging = getConfig().getBoolean("logging");
+		broadcast = getConfig().getBoolean("broadcast");
 	}
 
 	public void onDisable() {

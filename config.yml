@@ -15,5 +15,8 @@ render-update-time: 86400
 #  Cleaning the memory is essentially moving edited chunks to the chunkCache.json
 memory-clean-update-time: 3600
 
+#Enable broadcasting.
+broadcast: true
+
 #Enable verbose (detailed) logging. (Use true or false)
 logging: false
