@@ -28,6 +28,10 @@ public class Mapper {
 	private ArrayList<Color> colorIndex;
 	private HashMap<Material, Integer> materialIndex;
 
+	/**
+	 * Mapper constructor.
+	 * @param instance An instance of the UpdaterMain class.
+	 */
 	public Mapper(UpdaterMain instance) {
 		plugin = instance;
 		
@@ -56,12 +60,20 @@ public class Mapper {
 		startMapper();
 	};
 	
+	/**
+	 * Start the mapper task.
+	 */
 	private void startMapper() {
 		if(mapperTask != null) mapperTask.cancel();
 		long delaytime = plugin.getConfig().getInt("render-update-time") * 20L;
 		mapperTask = plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, mapper, delaytime, delaytime);
 	}
 	
+	/**
+	 * Parse BlockMapColors.json and put colors into an array.
+	 * @throws IOException Can throw an IOException if reading BlockMapColors.json goes wrong
+	 * @throws ParseException Can throw a ParseException if JSON is invalid.
+	 */
 	private void loadColors() throws IOException, ParseException {
 		FileReader fileReader = new FileReader(plugin.getDataFolder() + "/BlockMapColors.json");
 		
@@ -124,6 +136,12 @@ public class Mapper {
 		}
 	}
 	
+	/**
+	 * Update the map with all edited chunks and edited minimaps.
+	 * @param force Force an update.
+	 * @throws IOException Can throw an IO exception when reading from chunkCache.json goes wrong.
+	 * @throws ParseException Can throw a ParseException if JSON was invalid.
+	 */
 	public void updateMap(boolean force) throws IOException, ParseException {
 		plugin.updating = true;
 		
@@ -196,6 +214,14 @@ public class Mapper {
 		System.gc();
 	}
 	
+	/**
+	 * Split the workload.
+	 * @param w The world
+	 * @param startX The X-coordinate of the starting point.
+	 * @param startZ The Z-coordinate of the starting point.
+	 * @param size The size of the image
+	 * @return An Arraylist of ints representing r,g,b values for each pixel.
+	 */
 	private ArrayList<Integer> preGenerateMap(World w, int startX, int startZ, int size) {
 		ArrayList<Integer> img = new ArrayList<Integer>();
 		for(int z = 0; z < size; z += 128) {
@@ -207,6 +233,14 @@ public class Mapper {
 		return img;
 	}
 	
+	/**
+	 * Generate a map image as a list of r,g,b values.
+	 * @param w The world
+	 * @param startX The X-coordinate of the starting point.
+	 * @param startZ The Z-coordinate of the starting point.
+	 * @param size The size of the image
+	 * @return An Arraylist of ints representing r,g,b values for each pixel.
+	 */
 	private ArrayList<Integer> generateMap(World w, int startX, int startZ, int size) {
 		int arraySize = (int) (Math.ceil(size / 16) * 16);
 		ArrayList<Integer> img = new ArrayList<Integer>(Collections.nCopies(arraySize * arraySize * 3, null));
