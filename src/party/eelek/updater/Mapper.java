@@ -224,9 +224,9 @@ public class Mapper {
 	 */
 	private ArrayList<Integer> preGenerateMap(World w, int startX, int startZ, int size) {
 		ArrayList<Integer> img = new ArrayList<Integer>();
-		for(int z = 0; z < size; z += 128) {
-			for(int x = 0; x < size; x += 128) {
-				img.addAll(z * 128 + x, generateMap(w, startX + x, startZ + z, 128));
+		for(int z = 0; z < size; z += plugin.CHUNKSIZE) {
+			for(int x = 0; x < size; x += plugin.CHUNKSIZE) {
+				img.addAll(z * plugin.CHUNKSIZE + x, generateMap(w, startX + x, startZ + z, plugin.CHUNKSIZE));
 			}
 		}
 		
