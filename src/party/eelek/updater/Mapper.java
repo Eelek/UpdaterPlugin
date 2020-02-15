@@ -156,7 +156,8 @@ public class Mapper {
 			
 			int totalWorkload = minimaps.size() + current.size();
 			double done = 0.0;
-			
+		
+			plugin.getServer().getWorlds().get(0).setAutoSave(false);
 	    	for (SuperChunk c : current) {
 				JSONArray data = new JSONArray();
 				data.addAll(preGenerateMap(c.getWorld(), c.getX(), c.getZ(), plugin.CHUNKSIZE));	    		
@@ -180,7 +181,6 @@ public class Mapper {
 	    	
 			plugin.watchdog.clearChunkCache();
 			
-			plugin.getServer().getWorlds().get(0).setAutoSave(false);
 			for(int m = 0; m < minimaps.size(); m++) {
 				JSONObject minimapObj = (JSONObject) minimaps.get(m);
 				int sideLength = Integer.parseInt(minimapObj.get("size").toString());
