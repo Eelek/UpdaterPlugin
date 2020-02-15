@@ -187,7 +187,7 @@ public class Mapper {
 				done++;
 				if(plugin.debugLogging) plugin.getLogger().info("Updating: " + Math.round((done / totalWorkload) * 100) + "%");
 			}
-			plugin.getServer().getWorlds().get(0).setAutoSave(false);
+			plugin.getServer().getWorlds().get(0).setAutoSave(true);
 			
 			plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.GREEN + "Map updated.");
 		}
