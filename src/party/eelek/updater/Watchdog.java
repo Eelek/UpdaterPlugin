@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
@@ -19,8 +20,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-
-import net.md_5.bungee.api.ChatColor;
 
 public class Watchdog implements Listener {
 	
@@ -43,6 +42,7 @@ public class Watchdog implements Listener {
 				if(plugin.updating) return;
 				try {
 					saveChunkCache();
+					System.gc();
 				} catch(Exception e) {
 					plugin.getLogger().severe("An error occured whilst trying to update chunk cache.");
 					e.printStackTrace();
@@ -150,8 +150,6 @@ public class Watchdog implements Listener {
 		writeChunkCache(cacheJSON, false);
 
 		chunks.removeAll(copy);
-		
-		System.gc();
 		
 		if(plugin.broadcast) plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.GREEN + "Memory clear complete.");
 	}

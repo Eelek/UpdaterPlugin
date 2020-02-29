@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+import org.bukkit.ChatColor;
+import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -15,8 +17,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-
-import net.md_5.bungee.api.ChatColor;
 
 @SuppressWarnings("unchecked")
 public class Mapper {
@@ -49,6 +49,7 @@ public class Mapper {
 				if(plugin.updating) return;
 				try {
 					updateMap(false);
+					System.gc();
 				} catch (Exception e) {
 					plugin.getLogger().severe("An error occured whilst updating the map.");
 					e.printStackTrace();
@@ -211,7 +212,6 @@ public class Mapper {
 		}
 		
 		plugin.updating = false;
-		System.gc();
 	}
 	
 	/**
@@ -257,7 +257,7 @@ public class Mapper {
 			for(int nx = 0; nx < chunkSides; nx++) {
 				int xOffset = Math.floorDiv(minX + nx * 16, 16);
 				int zOffset = Math.floorDiv(minZ + nz * 16, 16);
-				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot());
+				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot(true, false, false));
 			}
 		}
 
@@ -272,6 +272,7 @@ public class Mapper {
 					north = cache.get(0);
 				} else if (rz == 1) {
 					north = chunk;
+					w.getChunkAt(north.getX(), north.getZ()).unload();
 					cache.remove(0);
 				}
 				
@@ -325,20 +326,24 @@ public class Mapper {
 	 * @param chunk The chunk that is being scanned.
 	 * @param x The block X coordinate.
 	 * @param z The block Z coordinate.
-	 * @param start A start coordinate, from which to start checking.
+	 * @param start A start coordinate, from which to start checking. (Use 0 to disable).
 	 * @param waterIsTransparent Count water as transparent blocks.
 	 * @return the Y coordinate of the heightest non-transparent block.
 	 */
 	private int getHighestSolidAt(ChunkSnapshot chunk, int x, int z, int start, boolean waterIsTransparent) {
 		int y = 255;
-		if(start == -1) {
-			y = chunk.getHighestBlockYAt(x, z);
-		} else {
+		if(start > -1) {
 			y = start;
+		} else {
+			y = chunk.getHighestBlockYAt(x, z);
 		}
 		
-		while(materialIndex.get(chunk.getBlockType(x, y, z)) == 0 || (materialIndex.get(chunk.getBlockType(x, y, z)) == 12 && waterIsTransparent) ) { //Skip transparent blocks
+		while(materialIndex.get(chunk.getBlockType(x, y, z)) == 0 || (materialIndex.get(chunk.getBlockType(x, y, z)) == 12 && waterIsTransparent)) { //Skip transparent blocks
 			y--;
+			if(y < 0) {
+				y = 0;
+				break;
+			}
 		}
 		
 		return (materialIndex.get(chunk.getBlockType(x, y + 1, z)) == 12 && waterIsTransparent) ? y + 1 : y;

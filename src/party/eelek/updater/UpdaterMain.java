@@ -10,14 +10,13 @@ import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-
-import net.md_5.bungee.api.ChatColor;
 
 public class UpdaterMain extends JavaPlugin {
 	
@@ -143,6 +142,7 @@ public class UpdaterMain extends JavaPlugin {
 				public void run() {
 					try {
 						mapper.updateMap(true);
+						if(!broadcast && !debugLogging) sender.sendMessage(PREFIX + ChatColor.GREEN + "Map Updated.");
 					} catch (IOException | ParseException e) {
 						e.printStackTrace();
 					}
@@ -158,6 +158,7 @@ public class UpdaterMain extends JavaPlugin {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			return true;
 		}
 		
 		if(cmd.getName().equalsIgnoreCase("loadmap")) {
