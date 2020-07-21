@@ -14,8 +14,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 public class UpdaterMain extends JavaPlugin {
@@ -43,8 +41,6 @@ public class UpdaterMain extends JavaPlugin {
 		if (!(new File(getDataFolder() + "/BlockMapColors.json")).exists()) {
 			saveResource("BlockMapColors.json", false);
 		}
-		
-		fetchSetupData();
 
 		mapper = new Mapper(this);
 		watchdog = new Watchdog(this);
@@ -123,19 +119,6 @@ public class UpdaterMain extends JavaPlugin {
 		return response.toString();
 	}
 	
-	private void fetchSetupData() {
-		try {
-			JSONParser parser = new JSONParser();
-			
-			JSONObject apidata = (JSONObject) parser.parse(getDataFromWebserver(getConfig().getString("api-fetch-url")));
-			
-			CHUNKSIZE = Integer.parseInt(apidata.get("chunkSize").toString());
-		} catch (ParseException | IOException e) {
-			getLogger().severe("An error occured whilst initiating the Mapper.");
-			e.printStackTrace();
-		}
-	}
-	
 	public boolean onCommand(CommandSender sender, Command cmd, String commandlabel, String[] args) {
 		if(cmd.getName().equalsIgnoreCase("updatemap")) {
 			getServer().getScheduler().runTaskAsynchronously(this, new Runnable() {
@@ -180,14 +163,9 @@ public class UpdaterMain extends JavaPlugin {
 					startZ = tmp;
 				}
 				
-				startX = Math.floorDiv(startX, CHUNKSIZE) * CHUNKSIZE;
-				startZ = Math.floorDiv(startZ, CHUNKSIZE) * CHUNKSIZE;
-				endX = (int) (Math.ceil(endX * 1.0d / CHUNKSIZE) * CHUNKSIZE);
-				endZ = (int) (Math.ceil(endZ * 1.0d / CHUNKSIZE) * CHUNKSIZE);
-				
-				for(int z = startZ; z < endZ; z += CHUNKSIZE) {
-					for(int x = startX; x < endX; x += CHUNKSIZE) {
-						watchdog.registerChunk(getServer().getWorlds().get(0), x, z);
+				for(int z = startZ; z < endZ; z++) {
+					for(int x = startX; x < endX; x++) {
+						watchdog.registerBlock(x, z);
 					}
 				}
 				

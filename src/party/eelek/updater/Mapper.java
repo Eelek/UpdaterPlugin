@@ -4,14 +4,11 @@ import java.awt.Color;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Chunk;
-import org.bukkit.ChunkSnapshot;
 import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.scheduler.BukkitTask;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -25,8 +22,9 @@ public class Mapper {
 	private Runnable mapper;
 	private BukkitTask mapperTask;
 	
-	private ArrayList<Color> colorIndex;
-	private HashMap<Material, Integer> materialIndex;
+	private HashMap<Material, Color> mapColors;
+	private ArrayList<Color> colorIndexes;
+	private final int[] colorVariations = new int[] {180, 225, 255, 135};
 
 	/**
 	 * Mapper constructor.
@@ -76,28 +74,22 @@ public class Mapper {
 	 * @throws ParseException Can throw a ParseException if JSON is invalid.
 	 */
 	private void loadColors() throws IOException, ParseException {
-		FileReader fileReader = new FileReader(plugin.getDataFolder() + "/BlockMapColors.json");
-		
-		StringBuilder content = new StringBuilder();
-		
-		int c;
-		while((c = fileReader.read()) != -1) {
-			content.append((char) c);
-		}
-			
-		fileReader.close();
-			
-		colorIndex = new ArrayList<Color>();
-		materialIndex = new HashMap<Material, Integer>();
+		mapColors = new HashMap<Material, Color>();
+		colorIndexes = new ArrayList<Color>();
 
 		JSONParser parser = new JSONParser();
-		Object object = parser.parse(content.toString());
-		JSONArray ids = (JSONArray) object;
+		JSONArray ids = (JSONArray) parser.parse(new FileReader(plugin.getDataFolder() + "/BlockMapColors.json"));
 
 		for (int i = 0; i < ids.size(); i++) {
 			JSONObject id = (JSONObject) ids.get(i);
 			JSONArray materials = (JSONArray) id.get("materials");
 			JSONObject colorObj = (JSONObject) id.get("color");
+			
+			Color color = new Color(
+					Integer.parseInt(colorObj.get("r").toString()), 
+	                Integer.parseInt(colorObj.get("g").toString()), 
+	                Integer.parseInt(colorObj.get("b").toString()), 
+	                Integer.parseInt(colorObj.get("a").toString()));
 
 			for (int m = 0; m < materials.size(); m++) {
 				Material material = Material.getMaterial(materials.get(m).toString().toUpperCase());
@@ -105,35 +97,11 @@ public class Mapper {
 				if (material == null) {
 					throw new IllegalArgumentException(materials.get(m).toString().toUpperCase() + " is not a valid material.");
 				}
-					
-				materialIndex.put(material, i);				
+				
+				mapColors.put(material, color);
 			}
 			
-			Color color = new Color(
-					Integer.parseInt(colorObj.get("r").toString()), 
-	                Integer.parseInt(colorObj.get("g").toString()), 
-	                Integer.parseInt(colorObj.get("b").toString()), 
-	                Integer.parseInt(colorObj.get("a").toString()));
-			
-			colorIndex.add(new Color(
-					Math.floorDiv(color.getRed() * 180, 255),
-					Math.floorDiv(color.getGreen() * 180, 255),
-					Math.floorDiv(color.getBlue() * 180, 255),
-					color.getAlpha()));
-			
-			colorIndex.add(new Color(
-					Math.floorDiv(color.getRed() * 220, 255),
-					Math.floorDiv(color.getGreen() * 220, 255),
-					Math.floorDiv(color.getBlue() * 220, 255),
-					color.getAlpha()));
-			
-			colorIndex.add(color);
-			
-			colorIndex.add(new Color(
-					Math.floorDiv(color.getRed() * 135, 255),
-					Math.floorDiv(color.getGreen() * 135, 255),
-					Math.floorDiv(color.getBlue() * 135, 255),
-					color.getAlpha()));
+			colorIndexes.add(color);
 		}
 	}
 	
@@ -146,66 +114,31 @@ public class Mapper {
 	public void updateMap(boolean force) throws IOException, ParseException {
 		plugin.updating = true;
 		
-		JSONParser parser = new JSONParser();
-		
-		ArrayList<SuperChunk> current = plugin.watchdog.getEditedChunks();
-		JSONObject apidata = (JSONObject) parser.parse(plugin.getDataFromWebserver(plugin.getConfig().getString("api-fetch-url")));
-		JSONArray minimaps = (JSONArray) apidata.get("miniMapList");
+		ArrayList<int[]> current = plugin.watchdog.getUpdateBuffer();
 		
 		if(!current.isEmpty() || force) {
 			if(plugin.broadcast) plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.RED + "Updating map, this may be laggy.");
 			
-			int totalWorkload = minimaps.size() + current.size();
+			int totalWorkload = current.size();
 			double done = 0.0;
 		
 			plugin.getServer().getWorlds().get(0).setAutoSave(false);
-	    	for (SuperChunk c : current) {
-				JSONArray data = new JSONArray();
-				data.addAll(preGenerateMap(c.getWorld(), c.getX(), c.getZ(), plugin.CHUNKSIZE));	    		
-				
-				JSONObject metaData = new JSONObject();
-				metaData.put("x", c.getX());
-				metaData.put("z", c.getZ());
-				metaData.put("size", plugin.CHUNKSIZE);
-				metaData.put("world", c.getWorld().getEnvironment().toString().toLowerCase());
-				metaData.put("isMiniMap", false);
-				
-				JSONObject complete = new JSONObject();
-				complete.put("data", data);
-				complete.put("metaData", metaData);
-				
-				plugin.sendDataToWebserver(complete.toJSONString(), plugin.getConfig().getString("api-upload-url"));
+			JSONArray data = new JSONArray();
+	    	for (int[] block : current) {
+				JSONObject b = new JSONObject();
+				b.put("x", block[0]);
+				b.put("z", block[1]);
+				b.put("color", getBlockMapColor(block).getRGB());
+				data.add(b);
 				
 				done++;
 				if(plugin.debugLogging) plugin.getLogger().info("Updating: " + Math.round((done / totalWorkload) * 100) + "%");
 			}
 	    	
+	    	plugin.sendDataToWebserver(data.toJSONString(), plugin.getConfig().getString("api-upload-url"));
+	    	
 			plugin.watchdog.clearChunkCache();
 			
-			for(int m = 0; m < minimaps.size(); m++) {
-				JSONObject minimapObj = (JSONObject) minimaps.get(m);
-				int sideLength = Integer.parseInt(minimapObj.get("size").toString());
-				int x = Integer.parseInt(minimapObj.get("x").toString());
-				int z = Integer.parseInt(minimapObj.get("z").toString());
-				JSONArray data = new JSONArray();
-
-				data.addAll(generateMap(plugin.getServer().getWorlds().get(0), x, z, sideLength));
-				
-				JSONObject metaData = new JSONObject();
-				metaData.put("x", x);
-				metaData.put("z", z);
-				metaData.put("size", sideLength);
-				metaData.put("world", "normal");
-				metaData.put("isMiniMap", true);
-				
-				JSONObject complete = new JSONObject();
-				complete.put("data", data);
-				complete.put("metaData", metaData);
-				
-				plugin.sendDataToWebserver(complete.toJSONString(), plugin.getConfig().getString("api-upload-url"));
-				done++;
-				if(plugin.debugLogging) plugin.getLogger().info("Updating: " + Math.round((done / totalWorkload) * 100) + "%");
-			}
 			plugin.getServer().getWorlds().get(0).setAutoSave(true);
 			
 			if(plugin.broadcast) plugin.getServer().broadcastMessage(plugin.PREFIX + ChatColor.GREEN + "Map updated.");
@@ -214,111 +147,22 @@ public class Mapper {
 		plugin.updating = false;
 	}
 	
-	/**
-	 * Split the workload.
-	 * @param w The world
-	 * @param startX The X-coordinate of the starting point.
-	 * @param startZ The Z-coordinate of the starting point.
-	 * @param size The size of the image
-	 * @return An Arraylist of ints representing r,g,b values for each pixel.
-	 */
-	private ArrayList<Integer> preGenerateMap(World w, int startX, int startZ, int size) {
-		ArrayList<Integer> img = new ArrayList<Integer>();
-		for(int z = 0; z < size; z += plugin.CHUNKSIZE) {
-			for(int x = 0; x < size; x += plugin.CHUNKSIZE) {
-				img.addAll(z * plugin.CHUNKSIZE + x, generateMap(w, startX + x, startZ + z, plugin.CHUNKSIZE));
-			}
+	private Color getBlockMapColor(int[] block) {
+		Block b = getHighestSolidAt(block[0], block[1], false, -1);
+		
+		if(colorIndexes.indexOf(mapColors.get(b.getType())) == 12) { //Water
+			int depth = getHighestSolidYAt(block[0], block[1], true, b.getY());
+			int d = b.getY() - depth;
+			if(d > 4)                return getColorVariation(mapColors.get(b.getType()), 0);
+			else if(d <= 4 && d > 2) return getColorVariation(mapColors.get(b.getType()), 1);
+			else                     return getColorVariation(mapColors.get(b.getType()), 2);
+		} else {
+			int north = getHighestSolidYAt(block[0], block[1] - 1, false, -1);
+			int d = north - b.getY();
+			if(d > 0)       return getColorVariation(mapColors.get(b.getType()), 0);
+			else if(d == 0) return getColorVariation(mapColors.get(b.getType()), 1);
+			else            return getColorVariation(mapColors.get(b.getType()), 2);
 		}
-		
-		return img;
-	}
-	
-	/**
-	 * Generate a map image as a list of r,g,b values.
-	 * @param w The world
-	 * @param startX The X-coordinate of the starting point.
-	 * @param startZ The Z-coordinate of the starting point.
-	 * @param size The size of the image
-	 * @return An Arraylist of ints representing r,g,b values for each pixel.
-	 */
-	private ArrayList<Integer> generateMap(World w, int startX, int startZ, int size) {
-		int arraySize = (int) (Math.ceil(size / 16) * 16);
-		ArrayList<Integer> img = new ArrayList<Integer>(Collections.nCopies(arraySize * arraySize * 3, null));
-		
-		int minX = Math.floorDiv(startX, 16) * 16;
-		int minZ = Math.floorDiv(startZ, 16) * 16;
-		
-		ArrayList<ChunkSnapshot> cache = new ArrayList<ChunkSnapshot>();
-		
-		int chunkSides = (int) Math.ceil(size / 16);
-		int totalChunks = chunkSides * chunkSides;
-		
-		for(int nz = -1; nz < chunkSides; nz++) {
-			for(int nx = 0; nx < chunkSides; nx++) {
-				int xOffset = Math.floorDiv(minX + nx * 16, 16);
-				int zOffset = Math.floorDiv(minZ + nz * 16, 16);
-				cache.add(w.getChunkAt(xOffset, zOffset).getChunkSnapshot(true, false, false));
-			}
-		}
-
-		for(int c = 0; c < totalChunks; c++) {
-			ChunkSnapshot chunk = cache.get(chunkSides);
-			ChunkSnapshot north = null;
-			
-			for(int rz = 0; rz < 16; rz++) {
-				int northOffset = rz - 1;
-				if(rz == 0) {
-					northOffset = 15;
-					north = cache.get(0);
-				} else if (rz == 1) {
-					north = chunk;
-					w.getChunkAt(north.getX(), north.getZ()).unload();
-					cache.remove(0);
-				}
-				
-				for(int rx = 0; rx < 16; rx++) {
-					int y = getHighestSolidAt(chunk, rx, rz, -1, true);
-					int m = materialIndex.get(chunk.getBlockType(rx, y, rz));
-					int northY = 0;
-					
-					if(m == 12) { //Water: the water color is depth dependant, not dependant of the block north of it.
-						northY = getHighestSolidAt(chunk, rx, rz, -1, false);
-					} else {
-						northY = getHighestSolidAt(north, rx, northOffset, -1, true);
-					}
-					
-					Color mColor = getBlockColor(m, northY - y);
-					
-					int xOffset = (c % chunkSides) * 16 + rx;
-					int zOffset = 16 * 16 * Math.floorDiv(c, chunkSides) * chunkSides;
-					int chunkOffset = rz * chunkSides * 16;
-					int pixelOffset = 3 * ( xOffset + zOffset + chunkOffset);
-					img.set(pixelOffset    , mColor.getRed());
-					img.set(pixelOffset + 1, mColor.getGreen());
-					img.set(pixelOffset + 2, mColor.getBlue());
-				}
-			}
-		} 
-		
-		return img;
-	}
-
-	/**
-	 * Get the block color based on the height difference of itself with the block above it
-	 * @param mIndex The block's material index.
-	 * @param dY The Y of the block north of it - the block's own Y value.
-	 * @return The color as a Color object.
-	 */
-	private Color getBlockColor(int mIndex, int dY) {
-        if (mIndex == 12) {
-			if (dY > 4) 			return colorIndex.get(mIndex * 4);
-			if (dY <= 4 && dY > 2)	return colorIndex.get(mIndex * 4 + 1);
-									return colorIndex.get(mIndex * 4 + 2);
-		}
-
-		if (dY > 0) 	return colorIndex.get(mIndex * 4);
-		if (dY == 0) 	return colorIndex.get(mIndex * 4 + 1);
-						return colorIndex.get(mIndex * 4 + 2);
 	}
 		
 	/**
@@ -330,22 +174,33 @@ public class Mapper {
 	 * @param waterIsTransparent Count water as transparent blocks.
 	 * @return the Y coordinate of the heightest non-transparent block.
 	 */
-	private int getHighestSolidAt(ChunkSnapshot chunk, int x, int z, int start, boolean waterIsTransparent) {
-		int y = 255;
-		if(start > -1) {
-			y = start;
-		} else {
-			y = chunk.getHighestBlockYAt(x, z);
-		}
+	private int getHighestSolidYAt(int x, int z, boolean skipWater, int start) {
+		Block b = plugin.getServer().getWorlds().get(0).getHighestBlockAt(x, z);
+		int y = b.getY();
+		if(start != -1) y = start;
 		
-		while(materialIndex.get(chunk.getBlockType(x, y, z)) == 0 || (materialIndex.get(chunk.getBlockType(x, y, z)) == 12 && waterIsTransparent)) { //Skip transparent blocks
+		int colorIndex = colorIndexes.indexOf(mapColors.get(b.getType()));
+		while(colorIndex == 0 || (skipWater && colorIndex == 12)) { //Skip transparent blocks
 			y--;
-			if(y < 0) {
-				y = 0;
+			if(y < 1) {
 				break;
 			}
+			
+			colorIndex = colorIndexes.indexOf(mapColors.get(plugin.getServer().getWorlds().get(0).getBlockAt(x, y, z).getType()));
 		}
 		
-		return (materialIndex.get(chunk.getBlockType(x, y + 1, z)) == 12 && waterIsTransparent) ? y + 1 : y;
+		return y;
+	}
+	
+	private Block getHighestSolidAt(int x, int z, boolean skipWater, int start) {
+		return plugin.getServer().getWorlds().get(0).getBlockAt(x, getHighestSolidYAt(x, z, skipWater, start), z);
+	}
+	
+	private Color getColorVariation(Color c, int var) {
+		return new Color(
+				Math.floorDiv(c.getRed() * colorVariations[var], 255),
+				Math.floorDiv(c.getGreen() * colorVariations[var], 255),
+				Math.floorDiv(c.getBlue() * colorVariations[var], 255),
+				c.getAlpha());
 	}
 }

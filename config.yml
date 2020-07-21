@@ -1,7 +1,6 @@
 #Config file
 
 #Webserver API url
-api-fetch-url: "http://example.com/"
 api-upload-url: "http://example.com/"
 
 #API key
@@ -9,6 +8,10 @@ api-key: "example"
 
 #The time in seconds between map updates. (Default is 24 hours).
 render-update-time: 86400
+
+#Enable or disable the memory management feature. (Use true or false)
+#  It moves the update buffer from memory to file.
+use-memory-management: false
 
 #The time in seconds between memory clean updates. (Default is every hour).
 #  The plugin saves edited chunks in memory, and this can fill up memory.
